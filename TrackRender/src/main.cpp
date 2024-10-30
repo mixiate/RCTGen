@@ -121,8 +121,6 @@ int load_track_type(track_type_t* track_type,json_t* json)
 			}
 			if(strcmp(json_string_value(flag_name),"has_lift") ==0)track_type->flags|=TRACK_HAS_LIFT;
 			else if(strcmp(json_string_value(flag_name),"has_supports") ==0)track_type->flags|=TRACK_HAS_SUPPORTS;
-			else if(strcmp(json_string_value(flag_name),"semi_split") ==0)track_type->flags|=TRACK_SEMI_SPLIT;
-			else if(strcmp(json_string_value(flag_name),"split") ==0)track_type->flags|=TRACK_SPLIT;
 			else if(strcmp(json_string_value(flag_name),"no_lift_sprite") ==0)track_type->flags|=TRACK_NO_LIFT_SPRITE;
 			else if(strcmp(json_string_value(flag_name),"separate_tie") ==0)track_type->flags|=TRACK_SEPARATE_TIE;
 			else if(strcmp(json_string_value(flag_name),"tie_at_boundary") ==0)track_type->flags|=TRACK_SEPARATE_TIE|TRACK_TIE_AT_BOUNDARY;
@@ -353,6 +351,15 @@ int load_track_type(track_type_t* track_type,json_t* json)
 		}
 	}
 
+	//Load masks name
+	json_t* masks_name = json_object_get(json, "masks");
+	if (masks_name != NULL && json_is_string(masks_name))track_type->masks_name = json_string_value(masks_name);
+	else
+	{
+		printf("Error: Property \"masks\" not found or is not a string\n");
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -461,6 +468,11 @@ int main(int argc,char** argv)
 	if(json_base_dir !=NULL&&json_is_string(json_base_dir))base_dir=json_string_value(json_base_dir);
 	else printf("Error: No property \"base_directory\" found\n");
 
+	const char* masks_dir = NULL;
+	json_t* json_masks_dir = json_object_get(track, "masks_directory");
+	if (json_masks_dir != NULL && json_is_string(json_masks_dir))masks_dir = json_string_value(json_masks_dir);
+	else printf("Error: No property \"masks_directory\" found\n");
+
 	const char* sprite_dir=NULL;
 	json_t* json_sprite_dir=json_object_get(track,"sprite_directory");
 	if(json_sprite_dir !=NULL&&json_is_string(json_sprite_dir))sprite_dir=json_string_value(json_sprite_dir);
@@ -524,7 +536,7 @@ int main(int argc,char** argv)
 
 	context_t context=get_context(lights,num_lights);
 
-	write_track_type(&context,&track_type,sprites,base_dir,sprite_dir);
+	write_track_type(&context,&track_type,sprites,base_dir,masks_dir,sprite_dir);
 
 	snprintf(full_path,256,"%s%s",base_dir,spritefile_out);
 	json_dump_file(sprites,full_path,JSON_INDENT(4));

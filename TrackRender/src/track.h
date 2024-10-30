@@ -4,6 +4,9 @@
 #include <model.h>
 #include <renderer.h>
 
+#include <string>
+#include <vector>
+
 #define TILE_SIZE 3.3//3.67423461417477
 #define CLEARANCE_HEIGHT (0.20412414523*TILE_SIZE)
 
@@ -76,12 +79,10 @@ enum track_flags
 {
 	TRACK_HAS_LIFT=1,
 	TRACK_HAS_SUPPORTS=2,
-	TRACK_SEMI_SPLIT=4,
-	TRACK_NO_LIFT_SPRITE=8,
-	TRACK_SEPARATE_TIE=16,
-	TRACK_TIE_AT_BOUNDARY=32,
-	TRACK_SPLIT=64,
-	TRACK_SPECIAL_OFFSETS=128
+	TRACK_NO_LIFT_SPRITE=4,
+	TRACK_SEPARATE_TIE=8,
+	TRACK_TIE_AT_BOUNDARY=16,
+	TRACK_SPECIAL_OFFSETS=32
 };
 
 enum track_subtypes
@@ -181,6 +182,7 @@ typedef struct
 	float pivot;
 	float z_offset;
 	float support_spacing;
+	std::string masks_name;
 }track_type_t;
 
 typedef struct
@@ -191,31 +193,32 @@ typedef struct
 	vector3_t binormal;
 }track_point_t;
 
-typedef struct
+struct mask_t
 {
-	int32_t track_mask_op;
-	uint32_t num_rects;
-	int32_t x_offset;
-	int32_t y_offset;
-	rect_t* rects;
-}mask_t;
+	bool use_mask = false;
+	image_t image = image_t{};
+	uint8_t color = 0;
+	int32_t track_mask_op = 0;
+	int32_t x_offset = 0;
+	int32_t y_offset = 0;
+	bool flipped = false;
+};
 
-typedef struct
+struct view_t
 {
-	int flags;
-	int num_sprites;
-	mask_t* masks;
-}view_t;
+	int flags = 0;
+	std::vector<mask_t> masks;
+};
 
 typedef struct
 {
 	unsigned int flags;
 	track_point_t (*curve)(float distance);
 	float length;
-	view_t views[4];
+	const char* name;
 }track_section_t;
 
-int write_track_type(context_t* context,track_type_t* track_type,json_t* sprites,const char* base_dir,const char* output_dir);
+int write_track_type(context_t* context,track_type_t* track_type,json_t* sprites,const char* base_dir,const char* mask_dir,const char* output_dir);
 
 typedef struct
 {

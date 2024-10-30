@@ -1,0 +1,251 @@
+[
+    {
+        "uses_track_mask": true,
+        "enforce_non_overlapping": false,
+        "masks": [
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_1.png",
+                "color": 202,
+                "mask_type": "intersect",
+                "offset_x": 0,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_1.png",
+                "color": 202,
+                "mask_type": "difference",
+                "offset_x": 0,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_1.png",
+                "color": 203,
+                "mask_type": "none",
+                "offset_x": -32,
+                "offset_y": 16,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_1.png",
+                "color": 204,
+                "mask_type": "none",
+                "offset_x": 0,
+                "offset_y": 32,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_1.png",
+                "color": 205,
+                "mask_type": "none",
+                "offset_x": -32,
+                "offset_y": 48,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_1.png",
+                "color": 206,
+                "mask_type": "none",
+                "offset_x": 0,
+                "offset_y": 64,
+                "flipped": false
+            }
+        ]
+    },
+    {
+        "uses_track_mask": true,
+        "enforce_non_overlapping": false,
+        "masks": [
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 202,
+                "mask_type": "intersect",
+                "offset_x": 0,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 202,
+                "mask_type": "difference",
+                "offset_x": 0,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 203,
+                "mask_type": "none",
+                "offset_x": -32,
+                "offset_y": -16,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 204,
+                "mask_type": "intersect",
+                "offset_x": -64,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 204,
+                "mask_type": "difference",
+                "offset_x": -64,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 205,
+                "mask_type": "none",
+                "offset_x": -96,
+                "offset_y": -16,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 206,
+                "mask_type": "intersect",
+                "offset_x": -128,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_2.png",
+                "color": 206,
+                "mask_type": "difference",
+                "offset_x": -128,
+                "offset_y": 0,
+                "flipped": false
+            }
+        ]
+    },
+    {
+        "uses_track_mask": true,
+        "enforce_non_overlapping": false,
+        "masks": [
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_3.png",
+                "color": 202,
+                "mask_type": "none",
+                "offset_x": 0,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_3.png",
+                "color": 203,
+                "mask_type": "none",
+                "offset_x": 32,
+                "offset_y": -16,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_3.png",
+                "color": 204,
+                "mask_type": "none",
+                "offset_x": 0,
+                "offset_y": -32,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_3.png",
+                "color": 205,
+                "mask_type": "none",
+                "offset_x": 32,
+                "offset_y": -48,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_3.png",
+                "color": 206,
+                "mask_type": "intersect",
+                "offset_x": 0,
+                "offset_y": -64,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_3.png",
+                "color": 206,
+                "mask_type": "difference",
+                "offset_x": 0,
+                "offset_y": -64,
+                "flipped": false
+            }
+        ]
+    },
+    {
+        "uses_track_mask": false,
+        "enforce_non_overlapping": false,
+        "masks": [
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_4.png",
+                "color": 202,
+                "mask_type": "none",
+                "offset_x": 0,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_4.png",
+                "color": 203,
+                "mask_type": "none",
+                "offset_x": 32,
+                "offset_y": 16,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_4.png",
+                "color": 204,
+                "mask_type": "none",
+                "offset_x": 64,
+                "offset_y": 0,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_4.png",
+                "color": 205,
+                "mask_type": "none",
+                "offset_x": 96,
+                "offset_y": 16,
+                "flipped": false
+            },
+            {
+                "use_mask": true,
+                "image_path": "medium_turn_left_bank_4.png",
+                "color": 206,
+                "mask_type": "none",
+                "offset_x": 128,
+                "offset_y": 0,
+                "flipped": false
+            }
+        ]
+    }
+]
