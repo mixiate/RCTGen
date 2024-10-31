@@ -35,6 +35,7 @@ typedef struct
         texture_t texture;
         vector3_t color;
     };
+    vector3_t ambient_color;
 }material_t;
 
 typedef struct
