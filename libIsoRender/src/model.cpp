@@ -165,6 +165,7 @@ int mesh_load_transform(mesh_t* output, const char* filename, matrix_t matrix)
         output->materials[i].color = vector3(0.5, 0.5, 0.5);
         output->materials[i].specular_color = vector3(0.5, 0.5, 0.5);
         output->materials[i].specular_exponent = 50;
+        output->materials[i].ambient_color = vector3(0.0, 0.0, 0.0);
 
         const struct aiMaterial* mat = scene->mMaterials[i];
 
@@ -241,6 +242,12 @@ int mesh_load_transform(mesh_t* output, const char* filename, matrix_t matrix)
         {
             output->materials[i].specular_exponent = specular_exponent;
             //printf("%d\n",output->materials[i].specular_hardness);
+        }
+
+        aiColor4D ambient;
+        if (aiGetMaterialColor(mat, AI_MATKEY_COLOR_AMBIENT, &ambient) == AI_SUCCESS)
+        {
+            output->materials[i].ambient_color = vector3(ambient.r, ambient.g, ambient.b);
         }
     }
     //Count vertices and faces in scene

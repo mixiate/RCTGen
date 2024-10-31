@@ -139,7 +139,7 @@ float vector3_dot_clamped(vector3_t a, vector3_t b)
 }
 
 
-vector3_t shade_fragment(scene_t* scene, vector3_t pos, vector3_t normal, vector3_t view, vector3_t color, vector3_t specular_color, float specular_exponent, light_t* lights, uint32_t num_lights)
+vector3_t shade_fragment(scene_t* scene, vector3_t pos, vector3_t normal, vector3_t view, vector3_t color, vector3_t specular_color, float specular_exponent, vector3_t ambient_color, light_t* lights, uint32_t num_lights)
 {
     vector3_t output_color = vector3(0, 0, 0);
 
@@ -163,7 +163,7 @@ vector3_t shade_fragment(scene_t* scene, vector3_t pos, vector3_t normal, vector
             output_color = vector3_add(vector3_mult(specular_color, specular_factor), output_color);
         }
     }
-    return output_color;
+    return vector3_add(output_color, ambient_color);
 }
 
 int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t* lights, uint32_t num_lights, fragment_t* fragment)
@@ -203,7 +203,7 @@ int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t
         }
 
         //Shade fragment
-        vector3_t shaded_color = shade_fragment(scene, hit.position, hit.normal, view_vector, color, material->specular_color, material->specular_exponent, lights, num_lights);
+        vector3_t shaded_color = shade_fragment(scene, hit.position, hit.normal, view_vector, color, material->specular_color, material->specular_exponent, material->ambient_color, lights, num_lights);
 
         vector3_t normal = hit.normal;
         vector3_t tangent;
