@@ -381,7 +381,7 @@ image_t images[4*MAX_FRAMES];
 			context_begin_render(context);
 			project_add_model_to_context(project,context,&(project->items[i].model),frame,j);
 			context_finalize_render(context);
-			context_render_view(context,rotate_y(0.5*j*M_PI),images+frame*project->items[i].rotations+j);
+			context_render_view(context,rotate_y(0.5*j*M_PI),images+frame*project->items[i].rotations+j, 4.0);
 		    	}
 		context_end_render(context);
 		}

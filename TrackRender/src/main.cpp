@@ -353,6 +353,19 @@ int load_track_type(track_type_t* track_type,json_t* json)
 		}
 	}
 
+	//Load edge distance
+	json_t* edge_distance = json_object_get(json, "edge_distance");
+	if (edge_distance != NULL)
+	{
+		if (json_is_number(edge_distance))track_type->edge_distance = json_number_value(edge_distance);
+		else
+		{
+			printf("Error: Property \"edge_distance\" not found or is not a number\n");
+			return 1;
+		}
+	}
+	else track_type->edge_distance = 4;
+
 	return 0;
 }
 

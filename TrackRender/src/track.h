@@ -181,6 +181,7 @@ typedef struct
 	float pivot;
 	float z_offset;
 	float support_spacing;
+	float edge_distance;
 }track_type_t;
 
 typedef struct

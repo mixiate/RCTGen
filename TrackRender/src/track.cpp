@@ -448,8 +448,8 @@ void render_track_section(context_t* context,track_section_t* track_section,trac
 	{
 		if(rendered_views&(1<<i))
 		{
-			if(track_mask)context_render_silhouette(context,rotate_y(0.5*i*M_PI),images+i);
-			else context_render_view(context,rotate_y(0.5*i*M_PI),images+i);
+			if(track_mask)context_render_silhouette(context,rotate_y(0.5*i*M_PI),images+i, track_type->edge_distance);
+			else context_render_view(context,rotate_y(0.5*i*M_PI),images+i, track_type->edge_distance);
 		}
 	}
 	context_end_render(context);
