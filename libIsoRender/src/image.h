@@ -12,6 +12,7 @@ typedef struct
     int16_t y_offset;
     uint16_t flags;
     uint8_t* pixels;
+    float* depths;
 }image_t;
 
 void image_new(image_t* image, uint16_t width, uint16_t height, int16_t x_offset, int16_t y_offset, uint16_t flags);
