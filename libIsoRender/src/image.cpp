@@ -284,6 +284,7 @@ void image_new(image_t* image, uint16_t width, uint16_t height, int16_t x_offset
     image->y_offset = y_offset;
     image->flags = flags;
     image->pixels = (uint8_t*)calloc(width * height, sizeof(uint8_t));
+    image->depths = (float*)calloc(width * height, sizeof(float));
 }
 
 
@@ -295,6 +296,7 @@ void image_copy(image_t* src, image_t* dst)
     dst->y_offset = src->y_offset;
     dst->flags = src->flags;
     dst->pixels = (uint8_t*)calloc(src->width * src->height, sizeof(uint8_t));
+    dst->depths = (float*)calloc(src->width * src->height, sizeof(float));
     memmove(dst->pixels, src->pixels, src->width * src->height);
 }
 //TODO prevent writing outside image

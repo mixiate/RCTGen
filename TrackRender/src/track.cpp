@@ -315,10 +315,11 @@ void render_track_section(context_t* context,track_section_t* track_section,trac
 				if(extrude_behind)use_alt=!use_alt;
 				if(!(track_type->models_loaded&(1<<MODEL_TRACK_ALT)))use_alt=0;
 				//Add track model
-				if(use_alt)context_add_model_transformed(context,&(track_type->models[MODEL_TRACK_ALT]),track_transform,&args,track_mask);
-				else context_add_model_transformed(context,mesh,track_transform,&args,track_mask);
-				//Add track mask
-				if(track_mask)
+				if (!track_mask) {
+					if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask);
+					else context_add_model_transformed(context, mesh, track_transform, &args, track_mask);
+					//Add track mask
+				} else
 				{
 					if(start_tie)args.offset=offset-tie_length;
 					context_add_model_transformed(context,&(track_type->mask),track_transform,&args,0);
@@ -349,23 +350,28 @@ void render_track_section(context_t* context,track_section_t* track_section,trac
 			int use_alt=alt_available&&(i&1);
 			if(alt_available&&(track_section->flags&TRACK_ALT_INVERT))use_alt=!use_alt;
 
-			if(track_mask)context_add_model_transformed(context,&(track_type->mask),track_transform,&args,0);
-			if(use_alt)context_add_model_transformed(context,&(track_type->models[MODEL_TRACK_ALT]),track_transform,&args,track_mask);
-			else context_add_model_transformed(context,mesh,track_transform,&args,track_mask);
-
-			if((track_type->models_loaded&(1<<MODEL_BASE))&&(track_type->flags&TRACK_HAS_SUPPORTS)&&!(track_section->flags&TRACK_NO_SUPPORTS))
-				context_add_model_transformed(context,&(track_type->models[MODEL_BASE]),base_transform,&args,track_mask);
-			if(track_type->flags&TRACK_SEPARATE_TIE)
+			if (track_mask)
 			{
-				track_point_t track_point=get_track_point(track_section->curve,track_section->flags,z_offset,args.length,args.offset+0.5*length);
-				context_add_model(
-				    context,&(track_type->tie_mesh),
-				    transform(
-				        matrix(track_point.binormal.z,track_point.normal.z,track_point.tangent.z,track_point.binormal.y,track_point.normal.y,track_point.tangent.y,track_point.binormal.x,track_point.normal.x,track_point.tangent.x),
-				        change_coordinates(track_point.position)
-				    ),
-				    track_mask
-				);
+				context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);
+			}
+			else {
+				if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask);
+				else context_add_model_transformed(context, mesh, track_transform, &args, track_mask);
+
+				if ((track_type->models_loaded & (1 << MODEL_BASE)) && (track_type->flags & TRACK_HAS_SUPPORTS) && !(track_section->flags & TRACK_NO_SUPPORTS))
+					context_add_model_transformed(context, &(track_type->models[MODEL_BASE]), base_transform, &args, track_mask);
+				if (track_type->flags & TRACK_SEPARATE_TIE)
+				{
+					track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, args.length, args.offset + 0.5 * length);
+					context_add_model(
+						context, &(track_type->tie_mesh),
+						transform(
+							matrix(track_point.binormal.z, track_point.normal.z, track_point.tangent.z, track_point.binormal.y, track_point.normal.y, track_point.tangent.y, track_point.binormal.x, track_point.normal.x, track_point.tangent.x),
+							change_coordinates(track_point.position)
+						),
+						track_mask
+					);
+				}
 			}
 		}
 	}
@@ -746,8 +752,15 @@ void write_track_section(context_t* context,track_section_t* track_section,track
 						{
 							int mask_x=(x+full_sprites[angle].x_offset)-track_masks[angle].x_offset;
 							int mask_y=(y+full_sprites[angle].y_offset)-track_masks[angle].y_offset;
-							int in_track_mask=mask_x >=0&&mask_y >=0&&mask_x<track_masks[angle].width&&mask_y<track_masks[angle].height&&track_masks[angle].pixels[mask_x+mask_y*track_masks[angle].width] !=0;
 
+							int in_track_mask = 0;
+							if (mask_x >= 0 && mask_y >= 0 && mask_x < track_masks[angle].width && mask_y < track_masks[angle].height) {
+								const float track_depth = full_sprites[angle].depths[x + (y * full_sprites[angle].width)];
+								const float mask_depth = track_masks[angle].depths[mask_x + (mask_y * track_masks[angle].width)];
+
+								in_track_mask = mask_depth > 0.0 && mask_depth <= track_depth ? 1 : 0;
+							}
+							
 							switch(view->masks[sprite].track_mask_op)
 							{
 							case TRACK_MASK_DIFFERENCE:
@@ -761,9 +774,17 @@ void write_track_section(context_t* context,track_section_t* track_section,track
 								break;
 							}
 
-							if(sprite<view->num_sprites-1&&(view->masks[sprite].track_mask_op&TRACK_MASK_TRANSFER_NEXT)&&in_track_mask
-							  &&is_in_mask(x+full_sprites[angle].x_offset,y+full_sprites[angle].y_offset+((track_section->flags&TRACK_OFFSET_SPRITE_MASK) ? (z_offset-8) : 0),view->masks+sprite+1))
-								in_mask=1;
+							if (sprite < view->num_sprites - 1
+								&& (view->masks[sprite].track_mask_op & TRACK_MASK_TRANSFER_NEXT)
+								&& in_track_mask
+								&& is_in_mask(
+									x + full_sprites[angle].x_offset,
+									y + full_sprites[angle].y_offset + ((track_section->flags & TRACK_OFFSET_SPRITE_MASK) ? (z_offset - 8) : 0),
+									view->masks + sprite + 1)
+								)
+							{
+								in_mask = 1;
+							}
 						}
 
 						if(view->flags&VIEW_ENFORCE_NON_OVERLAPPING)

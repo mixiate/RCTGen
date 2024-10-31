@@ -342,6 +342,7 @@ void image_from_framebuffer(image_t* image, framebuffer_t* framebuffer, palette_
     image->x_offset = bounding_box.x_lower + floor(framebuffer->offset.x);
     image->y_offset = bounding_box.y_lower + floor(framebuffer->offset.y) - 1;//1 compensates for error not sure why it's needed TODO work out why it's needed
     image->pixels = (uint8_t*)calloc(image->width * image->height, sizeof(uint8_t));
+    image->depths = (float*)calloc(image->width * image->height, sizeof(float));
 
     for (int y = bounding_box.y_lower; y <= bounding_box.y_upper; y++)
     {
@@ -357,6 +358,7 @@ void image_from_framebuffer(image_t* image, framebuffer_t* framebuffer, palette_
             {
                 vector3_t error;
                 image->pixels[(x - bounding_box.x_lower) + (y - bounding_box.y_lower) * image->width] = palette_get_nearest(palette, fragment.region & REGION_MASK, fragment.color, &error);
+                image->depths[(x - bounding_box.x_lower) + (y - bounding_box.y_lower) * image->width] = fragment.depth;
 
                 //Distribute error onto neighbouring points
                 int points[4][2] = { {x + step,y},{x - step,y + 1},{x,y + 1},{x + step,y + 1} };
@@ -502,6 +504,7 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
                 float weight = 0;
                 float total_weight = 0;
                 int inside_samples = 0;
+                float min_depth = 50000.0;
                 for (int i = 0; i < AA_NUM_SAMPLES_U * AA_NUM_SAMPLES_V; i++)
                 {
                     if ((!(subsamples[i].flags & MATERIAL_NO_BLEED) || (flags & MATERIAL_NO_BLEED)) && !((subsamples[i].ghost_depth <= depth + 4 && subsamples[i].depth > depth + 4)))
@@ -514,16 +517,19 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
                             inside_samples++;
                         }
                         total_weight += AA_SAMPLE_WEIGHT;
+                        min_depth = min_depth < subsamples[i].depth ? min_depth : subsamples[i].depth;
                     }
                 }
                 color = vector3_mult(color, 1 / total_weight);
                 if (flags & MATERIAL_BACKGROUND_AA_DARK)framebuffer.fragments[x + y * framebuffer.width].color = vector3_mult(color, 0.5f + 0.5f * (weight / total_weight));
                 else framebuffer.fragments[x + y * framebuffer.width].color = color;
+                framebuffer.fragments[x + y * framebuffer.width].depth = min_depth;
             }
             else
             {
                 vector3_t color = vector3(0, 0, 0);
                 float weight = 0.0;
+                float min_depth = 50000.0;
                 for (int i = 0; i < AA_NUM_SAMPLES_U * AA_NUM_SAMPLES_V; i++)
                 {
                     if (subsamples[i].region != FRAGMENT_UNUSED && (!(subsamples[i].flags & MATERIAL_NO_BLEED) || (flags & MATERIAL_NO_BLEED)))
@@ -531,8 +537,10 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
                         color = vector3_add(color, vector3_mult(subsamples[i].color, AA_SAMPLE_WEIGHT));
                         weight += AA_SAMPLE_WEIGHT;
                     }
+                    min_depth = min_depth < subsamples[i].depth ? min_depth : subsamples[i].depth;
                 }
                 framebuffer.fragments[x + y * framebuffer.width].color = vector3_mult(color, 1.0f / weight);
+                framebuffer.fragments[x + y * framebuffer.width].depth = min_depth;
             }
         }
 
