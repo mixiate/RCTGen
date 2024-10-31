@@ -161,7 +161,7 @@ enum models
 #define NUM_MODELS 23
 #define SUPPORT_SPECIAL_START SUPPORT_SPECIAL_STEEP_TO_VERTICAL
 
-typedef struct
+struct track_type_t
 {
 	uint32_t flags;
 	uint64_t groups;
@@ -181,7 +181,8 @@ typedef struct
 	float pivot;
 	float z_offset;
 	float support_spacing;
-}track_type_t;
+	float offsets[10][8] = { 0.0 };
+};
 
 typedef struct
 {
