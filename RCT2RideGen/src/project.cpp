@@ -82,7 +82,7 @@ void render_rotation(context_t* context, int num_frames, float pitch, float roll
 {
     for (int i = 0; i < num_frames; i++)
     {
-        context_render_view(context, matrix_mult(rotate_y(yaw + (2 * i * M_PI) / num_frames), matrix_mult(rotate_z(pitch), rotate_x(roll))), images + i);
+        context_render_view(context, matrix_mult(rotate_y(yaw + (2 * i * M_PI) / num_frames), matrix_mult(rotate_z(pitch), rotate_x(roll))), images + i, 4);
     }
 
 }
@@ -904,7 +904,7 @@ int project_export_test(project_t* project, context_t* context)
             printf("Models added\n");
             context_finalize_render(context);
             printf("Render finalized\n");
-            context_render_view(context, rotate_y(M_PI), &image);
+            context_render_view(context, rotate_y(M_PI), &image, 4);
             printf("Render complete\n");
             context_end_render(context);
             printf("Cleanup complete\n");

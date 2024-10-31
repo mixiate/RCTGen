@@ -184,6 +184,7 @@ struct track_type_t
 	float support_spacing;
 	std::string masks_name;
 	float offsets[10][8] = { 0.0 };
+	float edge_distance;
 };
 
 typedef struct

@@ -374,7 +374,7 @@ void image_from_framebuffer(image_t* image, framebuffer_t* framebuffer, palette_
     free(framebuffer->fragments);
 }
 
-void context_render_view_internal(context_t* context, matrix_t view, image_t* image, uint32_t silhouette)
+void context_render_view_internal(context_t* context, matrix_t view, image_t* image, uint32_t silhouette, float edge_distance)
 {
     matrix_t camera = matrix_mult(context->projection, view);
 
@@ -475,13 +475,13 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
 
 
             //If there exists a sample forward of the center point with background AA enabled, use that instead of the center point
-            if (front_background_aa_sample != -1 && (min_depth < ghost_depth - 4 || mask))
+            if (front_background_aa_sample != -1 && (min_depth < ghost_depth - edge_distance || mask))
             {
                 //Count samples that fall inside the presumed edge
                 int inside_samples = 0;
                 for (int i = 0; i < AA_NUM_SAMPLES_U * AA_NUM_SAMPLES_V; i++)
                 {
-                    if (!(subsamples[i].depth > min_depth + 4 || (subsamples[i].region == FRAGMENT_UNUSED && !subsamples[i].flags & MATERIAL_IS_MASK) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))inside_samples++;
+                    if (!(subsamples[i].depth > min_depth + edge_distance || (subsamples[i].region == FRAGMENT_UNUSED && !subsamples[i].flags & MATERIAL_IS_MASK) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))inside_samples++;
                 }
                 //If more than three samples found, use the forwardmost point
                 if (inside_samples > 3)
@@ -507,9 +507,9 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
                 float min_depth = 50000.0;
                 for (int i = 0; i < AA_NUM_SAMPLES_U * AA_NUM_SAMPLES_V; i++)
                 {
-                    if ((!(subsamples[i].flags & MATERIAL_NO_BLEED) || (flags & MATERIAL_NO_BLEED)) && !((subsamples[i].ghost_depth <= depth + 4 && subsamples[i].depth > depth + 4)))
+                    if ((!(subsamples[i].flags & MATERIAL_NO_BLEED) || (flags & MATERIAL_NO_BLEED)) && !((subsamples[i].ghost_depth <= depth + edge_distance && subsamples[i].depth > depth + edge_distance)))
                     {
-                        if (!(subsamples[i].depth > depth + 4 || (subsamples[i].region == FRAGMENT_UNUSED && !subsamples[i].flags & MATERIAL_IS_MASK) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))//TODO assumes there's only one material with NO_BLEED set 
+                        if (!(subsamples[i].depth > depth + edge_distance || (subsamples[i].region == FRAGMENT_UNUSED && !subsamples[i].flags & MATERIAL_IS_MASK) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))//TODO assumes there's only one material with NO_BLEED set 
                         {
                             color = vector3_add(color, vector3_mult(subsamples[i].color, AA_SAMPLE_WEIGHT));
                             weight += AA_SAMPLE_WEIGHT;
@@ -549,12 +549,12 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
     free(transformed_lights);
 }
 
-void context_render_view(context_t* context, matrix_t view, image_t* image)
+void context_render_view(context_t* context, matrix_t view, image_t* image, float edge_distance)
 {
-    context_render_view_internal(context, view, image, 0);
+    context_render_view_internal(context, view, image, 0, edge_distance);
 }
 
-void context_render_silhouette(context_t* context, matrix_t view, image_t* image)
+void context_render_silhouette(context_t* context, matrix_t view, image_t* image, float edge_distance)
 {
-    context_render_view_internal(context, view, image, 1);
+    context_render_view_internal(context, view, image, 1, edge_distance);
 }
