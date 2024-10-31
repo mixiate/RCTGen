@@ -98,6 +98,29 @@ int load_groups(json_t* json,uint64_t* out)
 	return 0;
 }
 
+int load_offsets(const json_t* array, float* offsets) {
+	int size = json_array_size(array);
+	if (size != 8)
+	{
+		printf("Offsets must have 8 components\n");
+		return 1;
+	}
+
+	for (int i = 0; i < 8; i++) {
+		json_t* offset = json_array_get(array, i);
+
+		if (!json_is_number(offset))
+		{
+			printf("Offsets components must be numeric\n");
+			return 1;
+		}
+
+		offsets[i] = json_number_value(offset);
+	}
+
+	return 0;
+}
+
 int load_track_type(track_type_t* track_type,json_t* json)
 {
 	//Load track flags
@@ -349,6 +372,93 @@ int load_track_type(track_type_t* track_type,json_t* json)
 			printf("Error: failed to load model %s\n",support_model_names[i]);
 			return 1;
 		}
+	}
+
+	// Load offsets
+	const json_t* offsets = json_object_get(json, "offsets");
+	if (offsets != NULL && json_is_object(offsets))
+	{
+		const json_t* offsets_flat = json_object_get(offsets, "flat");
+		if (offsets_flat == NULL || !json_is_array(offsets_flat))
+		{
+			printf("Error: Property \"flat\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_flat, track_type->offsets[0]);
+
+		const json_t* offsets_gentle = json_object_get(offsets, "gentle");
+		if (offsets_gentle == NULL || !json_is_array(offsets_gentle))
+		{
+			printf("Error: Property \"gentle\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_gentle, track_type->offsets[1]);
+
+		const json_t* offsets_steep = json_object_get(offsets, "steep");
+		if (offsets_steep == NULL || !json_is_array(offsets_steep))
+		{
+			printf("Error: Property \"steep\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_steep, track_type->offsets[2]);
+
+		const json_t* offsets_bank = json_object_get(offsets, "bank");
+		if (offsets_bank == NULL || !json_is_array(offsets_bank))
+		{
+			printf("Error: Property \"bank\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_bank, track_type->offsets[3]);
+
+		const json_t* offsets_gentle_bank = json_object_get(offsets, "gentle_bank");
+		if (offsets_gentle_bank == NULL || !json_is_array(offsets_gentle_bank))
+		{
+			printf("Error: Property \"gentle_bank\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_gentle_bank, track_type->offsets[4]);
+
+		const json_t* offsets_inverted = json_object_get(offsets, "inverted");
+		if (offsets_inverted == NULL || !json_is_array(offsets_inverted))
+		{
+			printf("Error: Property \"inverted\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_inverted, track_type->offsets[5]);
+
+		const json_t* offsets_diagonal = json_object_get(offsets, "diagonal");
+		if (offsets_diagonal == NULL || !json_is_array(offsets_diagonal))
+		{
+			printf("Error: Property \"diagonal\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_diagonal, track_type->offsets[6]);
+
+		const json_t* offsets_diagonal_bank = json_object_get(offsets, "diagonal_bank");
+		if (offsets_diagonal_bank == NULL || !json_is_array(offsets_diagonal_bank))
+		{
+			printf("Error: Property \"diagonal_bank\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_diagonal_bank, track_type->offsets[7]);
+
+		const json_t* offsets_diagonal_gentle = json_object_get(offsets, "diagonal_gentle");
+		if (offsets_diagonal_gentle == NULL || !json_is_array(offsets_diagonal_gentle))
+		{
+			printf("Error: Property \"diagonal_gentle\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_diagonal_gentle, track_type->offsets[8]);
+
+		const json_t* offsets_diagonal_gentle_bank = json_object_get(offsets, "diagonal_gentle_bank");
+		if (offsets_diagonal_gentle_bank == NULL || !json_is_array(offsets_diagonal_gentle_bank))
+		{
+			printf("Error: Property \"diagonal_gentle_bank\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_diagonal_gentle_bank, track_type->offsets[9]);
+
+		track_type->flags |= TRACK_SPECIAL_OFFSETS;
 	}
 
 	//Load masks name

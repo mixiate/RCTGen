@@ -529,82 +529,7 @@ int offset_table_index(track_point_t track)
 	return 0xFF;
 }
 
-/*
-y        z
-|      -
-|   -
-|_
-*/
-
-/*
-float offset_tables[10][8]={
-    {0,0,0,0,0,0,0,0},
-    {0,0,0,0,0,0,0,0},//Gentle 1
-    {0,0,0,0,0,0,0,0},//Steep 2
-
-    {1,-1.5,-1,-1.5,1,0,-1,0},//Bank
-    {0,0,0,0,0,0,0,0},//Gentle Bank 4
-
-    {0,0,0,0,0,0,0,0},//Inverted 5
-    {0,0,0,0,0,0,0,0},//Diagonal 6
-
-    {0,0,0,0,0,0,0,0},//Diagonal Bank 7
-
-    {0,0,0,0,0,0,0,0},//Diagonal gentle 8
-    {0,0,0,0,0,0,0,0},//Other
-    };
-*/
-
-//Giga
-/*
-float offset_tables[10][8]={
-    {0,-1,0,-1.5,0,-1,0,-1.5},
-    {0,-1,0,-2,0,-2,0,-1},            //Gentle
-    {1,-0.5,1,-0.5,0.5,-1,1,-0.5},    //Steep
-    {0,-2,-1,-1.5,1,0,-1,0},          //Bank
-    {0.75,-2,-0.75,-2,1,-0.5,0,-0.5}, //Gentle Bank   -0.5,-1    0.5,0
-    {0,0,0,0,0,0,0,0},                //Inverted
-    {0,-1.25,0,-1.25,0,-1.25,0,-1.25},//Diagonal
-    {0,-1.75,-1,-0.25,0,-0.25,-1,-1.5},//Diagonal Bank
-    {0,-1.5,0,-1.5,0,-1.5,0,-1.5},    //Diagonal gentle
-    {0,0,0,0,0,0,0,0},                //Other
-};
-*/
-
-//Mini
-float offset_tables[10][8]={
-    {0,-1.45,0,-1.45,0,-1.45,0,-1.45},
-    {0,-1,0,-1.25,0,-1.25,0,-1},            //Gentle
-    {1,-0.5,1,-0.5,0.5,-1,1,-0.5},    //Steep
-    {0,-2,-1,-1.5,1,0,-1,0},          //Bank
-    {0.75,-2,-0.75,-2,1,-0.5,-0.5,-0.4}, //Gentle Bank   -0.5,-1    0.5,0
-    {0,0,0,0,0,0,0,0},                //Inverted
-    {0,-1.25,0,-1.25,0,-1.25,0,-1.25},//Diagonal
-    {0,-1.75,-1,-0.25,0,-0.25,-1,-1.5},//Diagonal Bank
-    {0,-1.5,0,-1.5,0,-1.5,0,-1.5},    //Diagonal gentle
-    {0,0,0,0,0,0,0,0},                //Other
-};
-
-
-
-
-//LIM
-/*
-float offset_tables[10][8]={
-    {0,0.5,0,0,0,0.5,0,0},
-    {0,1.0,0,0,0,0,0,0},//Gentle
-    {-2.25,0,-2.0,0,-0.75,0,-1.5,-1.0},//Steep
-    {0,1.0,0,1.0,0,1.0,0,0},//Bank
-    {0,0,0,0,0,0,0,0},//Gentle Bank
-    {0,-0.5,0,0,0,-0.5,0,0},//Inverted
-    {0,0,0,0,0,0,0,0},//Diagonal
-    {0,0,0,0,0,0,0,0},//Diagonal Bank
-    {0,0.5,0,0,0,0.75,0,0},//Diagonal gentle
-    {0,0,0,0,0,0,0,0},//Other
-    };
-*/
-
-vector3_t get_offset(int table,int view_angle)
+vector3_t get_offset(float offsets[10][8], int table,int view_angle)
 {
 	int index=table&0xF;
 	int end_angle=table>>5;
@@ -617,8 +542,8 @@ vector3_t get_offset(int table,int view_angle)
 	if(table ==0xFF)return offset;
 
 	offset.x=0;
-	offset.z=offset_tables[index][2*rotated_view_angle]*TILE_SIZE/32.0;
-	offset.y=offset_tables[index][2*rotated_view_angle+1]*CLEARANCE_HEIGHT/8.0;
+	offset.z= offsets[index][2*rotated_view_angle]*TILE_SIZE/32.0;
+	offset.y= offsets[index][2*rotated_view_angle+1]*CLEARANCE_HEIGHT/8.0;
 
 	//Check if right banked
 	if(right)
@@ -640,13 +565,13 @@ vector3_t get_offset(int table,int view_angle)
 	return offset;
 }
 
-void set_offset(int view_angle,track_section_t* track_section)
+void set_offset(float offsets[10][8], int view_angle,track_section_t* track_section)
 {
 	int start_table=offset_table_index(track_section->curve(0));
 	int end_table=offset_table_index(track_section->curve(track_section->length));
 
-	start_offset=get_offset(start_table,view_angle);
-	end_offset=get_offset(end_table,view_angle);
+	start_offset=get_offset(offsets, start_table,view_angle);
+	end_offset=get_offset(offsets, end_table,view_angle);
 }
 
 void render_track_sections(context_t* context,track_section_t* track_section,track_type_t* track_type,int track_mask,int subtype,int views,image_t* sprites)
@@ -657,13 +582,13 @@ int extrude_in_front_odd=(track_section->flags&TRACK_EXIT_45_DEG_LEFT)&&(track_s
 
 	if(track_type->flags&TRACK_SPECIAL_OFFSETS)
 	{
-	set_offset(0,track_section);
+	set_offset(track_type->offsets, 0,track_section);
 		if(views&0x1)render_track_section(context,track_section,track_type,extrude_behind,extrude_in_front_even,track_mask,0x1,sprites,subtype);
-	set_offset(1,track_section);
+	set_offset(track_type->offsets, 1,track_section);
 		if(views&0x2)render_track_section(context,track_section,track_type,0,extrude_in_front_odd,track_mask,0x2,sprites,subtype);
-	set_offset(2,track_section);
+	set_offset(track_type->offsets, 2,track_section);
 		if(views&0x4)render_track_section(context,track_section,track_type,extrude_behind,extrude_in_front_even,track_mask,0x4,sprites,subtype);
-	set_offset(3,track_section);
+	set_offset(track_type->offsets, 3,track_section);
 		if(views&0x8)render_track_section(context,track_section,track_type,0,extrude_in_front_odd,track_mask,0x8,sprites,subtype);
 	return;
 	}
