@@ -1,98 +1,102 @@
-[
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_1.png",
-                "color": 202,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            },
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_1.png",
-                "color": 203,
-                "mask_type": "none",
-                "offset_x": -32,
-                "offset_y": 16,
-                "flipped": false
-            },
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_1.png",
-                "color": 204,
-                "mask_type": "none",
-                "offset_x": -64,
-                "offset_y": 0,
-                "flipped": false
-            },
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_1.png",
-                "color": 205,
-                "mask_type": "none",
-                "offset_x": -96,
-                "offset_y": 16,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_2.png",
-                "color": 202,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            },
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_2.png",
-                "color": 203,
-                "mask_type": "none",
-                "offset_x": -32,
-                "offset_y": -16,
-                "flipped": false
-            },
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_2.png",
-                "color": 204,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": -32,
-                "flipped": false
-            },
-            {
-                "use_mask": true,
-                "image_path": "s_bend_right_2.png",
-                "color": 205,
-                "mask_type": "none",
-                "offset_x": -32,
-                "offset_y": -48,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-        ]
-    }
-]
+{ 
+    "alternate_track_section_name": "",
+    "alternate_track_section_flipped": false,
+    "views": [
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_1.png",
+                    "color": 202,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                },
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_1.png",
+                    "color": 203,
+                    "mask_type": "none",
+                    "offset_x": -32,
+                    "offset_y": 16,
+                    "flipped": false
+                },
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_1.png",
+                    "color": 204,
+                    "mask_type": "none",
+                    "offset_x": -64,
+                    "offset_y": 0,
+                    "flipped": false
+                },
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_1.png",
+                    "color": 205,
+                    "mask_type": "none",
+                    "offset_x": -96,
+                    "offset_y": 16,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_2.png",
+                    "color": 202,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                },
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_2.png",
+                    "color": 203,
+                    "mask_type": "none",
+                    "offset_x": -32,
+                    "offset_y": -16,
+                    "flipped": false
+                },
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_2.png",
+                    "color": 204,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": -32,
+                    "flipped": false
+                },
+                {
+                    "use_mask": true,
+                    "image_path": "s_bend_right_2.png",
+                    "color": 205,
+                    "mask_type": "none",
+                    "offset_x": -32,
+                    "offset_y": -48,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+            ]
+        }
+    ]
+}

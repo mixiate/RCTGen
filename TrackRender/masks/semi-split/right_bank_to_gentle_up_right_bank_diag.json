@@ -1,71 +1,75 @@
-[
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": true,
-                "image_path": "right_bank_to_gentle_up_right_bank_diag_1.png",
-                "color": 202,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": true,
-                "image_path": "right_bank_to_gentle_up_right_bank_diag_2.png",
-                "color": 202,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": true,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": true,
-                "image_path": "right_bank_to_gentle_up_right_bank_diag_3.png",
-                "color": 202,
-                "mask_type": "intersect",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            },
-            {
-                "use_mask": true,
-                "image_path": "right_bank_to_gentle_up_right_bank_diag_3.png",
-                "color": 202,
-                "mask_type": "difference",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": true,
-                "image_path": "right_bank_to_gentle_up_right_bank_diag_4.png",
-                "color": 202,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    }
-]
+{ 
+    "alternate_track_section_name": "",
+    "alternate_track_section_flipped": false,
+    "views": [
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": true,
+                    "image_path": "right_bank_to_gentle_up_right_bank_diag_1.png",
+                    "color": 202,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": true,
+                    "image_path": "right_bank_to_gentle_up_right_bank_diag_2.png",
+                    "color": 202,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": true,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": true,
+                    "image_path": "right_bank_to_gentle_up_right_bank_diag_3.png",
+                    "color": 202,
+                    "mask_type": "intersect",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                },
+                {
+                    "use_mask": true,
+                    "image_path": "right_bank_to_gentle_up_right_bank_diag_3.png",
+                    "color": 202,
+                    "mask_type": "difference",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": true,
+                    "image_path": "right_bank_to_gentle_up_right_bank_diag_4.png",
+                    "color": 202,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        }
+    ]
+}

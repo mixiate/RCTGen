@@ -1,62 +1,66 @@
-[
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": false,
-                "image_path": "",
-                "color": 0,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": false,
-                "image_path": "",
-                "color": 0,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": false,
-                "image_path": "",
-                "color": 0,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    },
-    {
-        "uses_track_mask": false,
-        "enforce_non_overlapping": false,
-        "masks": [
-            {
-                "use_mask": false,
-                "image_path": "",
-                "color": 0,
-                "mask_type": "none",
-                "offset_x": 0,
-                "offset_y": 0,
-                "flipped": false
-            }
-        ]
-    }
-]
+{ 
+    "alternate_track_section_name": "",
+    "alternate_track_section_flipped": false,
+    "views": [
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": false,
+                    "image_path": "",
+                    "color": 0,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": false,
+                    "image_path": "",
+                    "color": 0,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": false,
+                    "image_path": "",
+                    "color": 0,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        },
+        {
+            "uses_track_mask": false,
+            "enforce_non_overlapping": false,
+            "masks": [
+                {
+                    "use_mask": false,
+                    "image_path": "",
+                    "color": 0,
+                    "mask_type": "none",
+                    "offset_x": 0,
+                    "offset_y": 0,
+                    "flipped": false
+                }
+            ]
+        }
+    ]
+}
