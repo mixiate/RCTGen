@@ -704,16 +704,16 @@ int extrude_in_front_odd=(track_section->flags&TRACK_EXIT_45_DEG_LEFT)&&(track_s
 	}
 }
 
-std::array<view_t, 4> load_views(const char* track_section_name, const char* mask_directory, const char* track_mask_directory) {
+std::array<view_t, 4> load_views(const char* track_section_name, const char* mask_directory, const char* track_mask_directory, const bool flip_view) {
 	std::array<view_t, 4> views = { view_t {}, view_t {}, view_t {}, view_t {} };
 	
 	bool use_track_mask_directory = true;
 	json_error_t error;
-	json_t* views_array = json_load_file(std::format("{}{}.json", track_mask_directory, track_section_name).c_str(), 0, &error);
-	if(views_array == nullptr)
+	json_t* views_description = json_load_file(std::format("{}{}.json", track_mask_directory, track_section_name).c_str(), 0, &error);
+	if(views_description == nullptr)
 	{
-		views_array = json_load_file(std::format("{}{}.json", mask_directory, track_section_name).c_str(), 0, &error);
-		if (views_array == nullptr)
+		views_description = json_load_file(std::format("{}{}.json", mask_directory, track_section_name).c_str(), 0, &error);
+		if (views_description == nullptr)
 		{
 			printf("Error: %s at line %d column %d\n", error.text, error.line, error.column);
 			std::exit(1);
@@ -721,11 +721,43 @@ std::array<view_t, 4> load_views(const char* track_section_name, const char* mas
 		use_track_mask_directory = false;
 	}
 
+	json_t* alternate_track_section_name = json_object_get(views_description, "alternate_track_section_name");
+	if (alternate_track_section_name == nullptr || !json_is_string(alternate_track_section_name))
+	{
+		printf("Error: Property \"alternate_track_section_name\" not found or is not a string\n");
+		std::abort();
+	}
+	const char* alternate_track_section_name_value = json_string_value(alternate_track_section_name);
+
+	json_t* alternate_track_section_flipped = json_object_get(views_description, "alternate_track_section_flipped");
+	if (alternate_track_section_flipped == nullptr || !json_is_boolean(alternate_track_section_flipped))
+	{
+		printf("Error: Property \"alternate_track_section_flipped\" not found or is not a boolean\n");
+		std::abort();
+	}
+	const bool alternate_track_section_flipped_value = json_boolean_value(alternate_track_section_flipped);
+
+	if (strlen(alternate_track_section_name_value) != 0) {
+		return load_views(alternate_track_section_name_value, mask_directory, track_mask_directory, alternate_track_section_flipped_value);
+	}
+
+	json_t* views_array = json_object_get(views_description, "views");
+	if (views_array == nullptr || !json_is_array(views_array))
+	{
+		printf("Error: Property \"views\" not found or is not an array\n");
+		std::abort();
+	}
 	const int views_array_size = json_array_size(views_array);
-	for (int i = 0; i < views_array_size; i++) {
+	if (views_array_size != 4)
+	{
+		printf("Error: Property \"views\" array size is not 4\n");
+		std::abort();
+	}
+
+	for (int i = 0; i < 4; i++) {
 		view_t& view = views.at(i);
 
-		json_t* view_description = json_array_get(views_array, i);
+		json_t* view_description = flip_view ? json_array_get(views_array, 3 - i) : json_array_get(views_array, i);
 
 		json_t* uses_track_mask = json_object_get(view_description, "uses_track_mask");
 		if (uses_track_mask == nullptr || !json_is_boolean(uses_track_mask))
@@ -843,18 +875,24 @@ std::array<view_t, 4> load_views(const char* track_section_name, const char* mas
 				
 				FILE* image_file;
 				image_file = fopen(image_file_path.c_str(), "rb");
+				if (image_file == nullptr) {
+					printf("Error: Could not open %s\n", image_file_path.c_str());
+					std::abort();
+				}
 
 				image_t image;
-				if (image_read_png(&image, image_file) != 0) std::abort();
+				if (image_read_png(&image, image_file) != 0) {
+					printf("Error: Could not read %s as png\n", image_file_path.c_str());
+					std::abort();
+				}
 
 				fclose(image_file);
 
-				view.masks.push_back(mask_t{ true, image, uint8_t(color_value), track_mask_op, offset_x_value, offset_y_value, flipped_value });
+				view.masks.push_back(mask_t{ true, image, uint8_t(color_value), track_mask_op, flip_view ? -offset_x_value : offset_x_value, offset_y_value, flip_view || flipped_value });
 			}
 			else {
 				view.masks.push_back(mask_t{ false, image_t{}, 0, 0, 0, 0, false });
 			}
-
 		}
 	}
 
@@ -874,7 +912,7 @@ void write_track_section(context_t* context,track_section_t* track_section,track
 
 	const std::string track_mask_directory = std::format("{}masks/", base_directory);
 
-	const auto views = load_views(track_section->name, mask_directory, track_mask_directory.c_str());
+	const auto views = load_views(track_section->name, mask_directory, track_mask_directory.c_str(), false);
 
 	image_t track_masks[4];
 	int track_mask_views=0;
