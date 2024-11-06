@@ -516,6 +516,10 @@ int offset_table_index_with_rot(track_point_t track,int rot)
 	}
 	//Diagonal gentle
 	else if(compare_vec(track.tangent,vector3(-TILE_SIZE,2*CLEARANCE_HEIGHT,TILE_SIZE),rot)&&!banked)return 8;
+	//Diagonal gentle bank
+	else if (compare_vec(track.tangent, vector3(-TILE_SIZE, 2 * CLEARANCE_HEIGHT, TILE_SIZE), rot) && banked)return right | 9;
+	//Inverted
+	else if (track.normal.y < -0.9)return 5;
 	return 0xFF;
 }
 
