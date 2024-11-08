@@ -863,17 +863,17 @@ track_point_t large_half_loop_left_curve(float distance)
 	else if(distance<LARGE_HALF_LOOP_SEGMENT2_LENGTH)
 	{
 		float u=reparameterize(4.92552773e-08,-3.05251408e-06,7.72071092e-05,-1.03134802e-03,7.91192883e-03,-3.64962014e-02,1.60807957e-01,proj_distance-LARGE_HALF_LOOP_SEGMENT1_LENGTH);
-		point.position=vector3(TILE_SIZE*proj_distance/LARGE_HALF_LOOP_LENGTH,cubic(-0.403193,10.731874,2.020829,2.020829,u),cubic(-11.880000,15.345000,4.950000,4.950000,u));
+		point.position=vector3(TILE_SIZE * distance / LARGE_HALF_LOOP_LENGTH,cubic(-0.403193,10.731874,2.020829,2.020829,u),cubic(-11.880000,15.345000,4.950000,4.950000,u));
 		point.tangent=vector3_normalize(vector3(0,cubic_derivative(-0.403193,10.731874,2.020829,u),cubic_derivative(-11.880000,15.345000,4.950000,u)));
 	}
 	else
 	{
 		float u=reparameterize(1.99640047e-07,-6.93285191e-06,9.60806400e-05,-6.7055459e-04,2.46312103e-03,-1.96991475e-03,5.27553949e-02,proj_distance-LARGE_HALF_LOOP_SEGMENT2_LENGTH);
-		point.position=vector3(TILE_SIZE*proj_distance/LARGE_HALF_LOOP_LENGTH,cubic(3.633368,-15.350052,19.800000,14.370340,u),cubic(8.580000,-15.345000,0.000000,13.365000,u));
+		point.position=vector3(TILE_SIZE * distance / LARGE_HALF_LOOP_LENGTH,cubic(3.633368,-15.350052,19.800000,14.370340,u),cubic(8.580000,-15.345000,0.000000,13.365000,u));
 		point.tangent=vector3_normalize(vector3(0,cubic_derivative(3.633368,-15.350052,19.800000,u),cubic_derivative(8.580000,-15.345000,0.000000,u)));
 	}
 
-	point.tangent.x+=0.1006880872852946;
+	point.tangent.x += LARGE_HALF_LOOP_FACTOR / LARGE_HALF_LOOP_LENGTH;
 	point.tangent=vector3_normalize(point.tangent);
 
 	point.normal=vector3_normalize(vector3(0.0,point.tangent.z,-point.tangent.y));
