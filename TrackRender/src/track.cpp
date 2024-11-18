@@ -26,6 +26,7 @@ typedef struct
 	track_point_t (*track_curve)(float);
 	float scale;
 	float offset;
+	float y_offset;
 	float z_offset;
 	float length;
 	int flags;
@@ -80,6 +81,8 @@ vertex_t track_transform(vector3_t vertex,vector3_t normal,void* data)
 	vertex.z=args.scale*vertex.z+args.offset;
 
 	track_point_t track_point=get_track_point(args.track_curve,args.flags,args.z_offset,args.length,vertex.z);
+	if (args.y_offset != 0.0) 
+		track_point.position = vector3_add(track_point.position, vector3_mult(track_point.binormal, args.y_offset));
 
 	vertex_t out;
 	out.vertex=change_coordinates(vector3_add(track_point.position,vector3_add(vector3_mult(track_point.normal,vertex.y),vector3_mult(track_point.binormal,vertex.x))));
@@ -197,137 +200,199 @@ int get_special_index(int flags)
 	return 0;
 }
 
-void render_track_section(context_t* context,track_section_t* track_section,track_type_t* track_type,int extrude_behind,int extrude_in_front,int track_mask,int rendered_views,image_t* images,int subtype)
+float recalculate_y_offset_track_section_length(track_section_t* track_section, float y_offset, float z_offset)
 {
-	int num_meshes=(int)floor(0.5+track_section->length/track_type->length);
-	float scale=track_section->length/(num_meshes*track_type->length);
+	if (y_offset == 0.0)
+		return track_section->length;
+		
+	const size_t position_count = 5000;
+
+	std::vector<vector3_t> track_section_positions(position_count);
+
+	for (size_t i = 0; i < position_count; i++)
+	{
+		const track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, track_section->length, (track_section->length / position_count) * i);
+		auto offset_track_position = vector3_add(track_point.position, vector3_mult(track_point.binormal, y_offset));
+
+		// reverse these calculations
+		if (track_section->flags & TRACK_DIAGONAL)offset_track_position.x -= 0.5 * TILE_SIZE;
+		if (track_section->flags & TRACK_DIAGONAL_2)offset_track_position.z -= 0.5 * TILE_SIZE;
+		offset_track_position.y -= z_offset - 2 * CLEARANCE_HEIGHT;
+		if (!(track_section->flags & TRACK_VERTICAL))offset_track_position.z += 0.5 * TILE_SIZE;
+
+		track_section_positions.push_back(offset_track_position);
+	}
+
+	float distance = 0.0;
+	vector3_t previous_position = track_section_positions.front();
+	for (const auto position : track_section_positions) {
+		const auto v = vector3_sub(previous_position, position);
+		distance += std::sqrtf(vector3_dot(v, v));
+		previous_position = position;
+	}
+
+	return distance - std::abs(y_offset);
+}
+
+void add_track_models(
+	context_t* context,
+	track_section_t* track_section,
+	track_type_t* track_type,
+	const int extrude_behind,
+	const int extrude_in_front,
+	const int track_mask,
+	const int rendered_views,
+	image_t* images,
+	const int subtype,
+	track_mesh_t& track_mesh)
+{
+	float z_offset = ((track_type->z_offset / 8.0) * CLEARANCE_HEIGHT);
+
+	float y_offset_track_section_length = recalculate_y_offset_track_section_length(track_section, track_mesh.y_offset, z_offset);
+
+	int num_meshes = (int)floor(0.5 + y_offset_track_section_length / track_type->length);
+	float scale = track_section->length / (num_meshes * track_type->length);
 
 	//If alternating track meshes are used,we would prefer to have an even number of meshes as long as it doesn't cause too much distortion
-	if(track_type->models_loaded&(1<<MODEL_TRACK_ALT))
+	if (track_type->models_loaded & (1 << MODEL_TRACK_ALT))
 	{
-		int num_meshes_even=2*(int)floor(0.5+track_section->length/(2*track_type->length));
-		if(track_section->flags&TRACK_ALT_PREFER_ODD)num_meshes_even=2*(int)floor(track_section->length/(2*track_type->length))+1;
-		float scale_even=track_section->length/(num_meshes_even*track_type->length);
-		if(scale_even>0.9&&scale_even<1.11111)
+		int num_meshes_even = 2 * (int)floor(0.5 + track_section->length / (2 * track_type->length));
+		if (track_section->flags & TRACK_ALT_PREFER_ODD)num_meshes_even = 2 * (int)floor(track_section->length / (2 * track_type->length)) + 1;
+		float scale_even = track_section->length / (num_meshes_even * track_type->length);
+		if (scale_even > 0.9 && scale_even < 1.11111)
 		{
-			num_meshes=num_meshes_even;
-			scale=scale_even;
+			num_meshes = num_meshes_even;
+			scale = scale_even;
 		}
 	}
 
-	float length=scale*track_type->length;
-	float z_offset=((track_type->z_offset/8.0)*CLEARANCE_HEIGHT);
+	float length = scale * track_type->length;
 
 	mesh_t* mesh;
 	mesh_t* mesh_tie;
-	switch(subtype)
+	switch (subtype)
 	{
 	case TRACK_SUBTYPE_DEFAULT:
-		mesh=&(track_type->mesh);
-		mesh_tie=&(track_type->mesh_tie);
+		mesh = &(track_mesh.mesh);
+		mesh_tie = &(track_type->mesh_tie);
 		break;
 	case TRACK_SUBTYPE_LIFT:
-		mesh=&(track_type->lift_mesh);
-		mesh_tie=&(track_type->lift_mesh_tie);
+		mesh = &(track_type->lift_mesh);
+		mesh_tie = &(track_type->lift_mesh_tie);
 		break;
 	default:
 		assert(0);
 		break;
 	}
 
-	context_begin_render(context);
-
 	//Add ghost models/track masks at start and end
 	track_transform_args_t args;
-	args.scale=scale;
-	args.offset=-length;
-	args.z_offset=z_offset;
-	args.track_curve=track_section->curve;
-	args.flags=track_section->flags;
-	args.length=track_section->length;
-	if(track_mask)context_add_model_transformed(context,&(track_type->mask),track_transform,&args,0);//);
-	else if(!extrude_behind)context_add_model_transformed(context,mesh,track_transform,&args,MESH_GHOST);
-	args.offset=track_section->length;
-	if(track_mask)context_add_model_transformed(context,&(track_type->mask),track_transform,&args,0);//track_mask?0:MESH_GHOST);
-	else if(!extrude_in_front)context_add_model_transformed(context,mesh,track_transform,&args,MESH_GHOST);
+	args.scale = scale;
+	args.offset = -length;
+	args.y_offset = 0.0;
+	args.z_offset = z_offset;
+	args.track_curve = track_section->curve;
+	args.flags = track_section->flags;
+	args.length = track_section->length;
+	if (track_mask)
+	{
+		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);
+	}
+	else if (!extrude_behind)
+	{
+		args.y_offset = track_mesh.y_offset;
+		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST);
+	}
+	args.offset = track_section->length;
+	if (track_mask)
+	{
+		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);//track_mask?0:MESH_GHOST);
+	}
+	else if (!extrude_in_front)
+	{
+		args.y_offset = track_mesh.y_offset;
+		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST);
+	}
 
-	if(track_type->flags&TRACK_TIE_AT_BOUNDARY)
+	if (track_type->flags & TRACK_TIE_AT_BOUNDARY)
 	{
 		//Determine start angle
-		int start_angle=3;
-		if(rendered_views&1)start_angle=0;
-		else if(rendered_views&2)start_angle=1;
-		else if(rendered_views&4)start_angle=2;
-		if(track_section->flags&(TRACK_DIAGONAL|TRACK_DIAGONAL_2))start_angle=(start_angle+1) % 4;
-		int end_angle=start_angle;
-		if(track_section->flags&TRACK_EXIT_90_DEG_LEFT)end_angle-=1;
-		else if(track_section->flags&TRACK_EXIT_90_DEG_RIGHT)end_angle+=1;
-		else if(track_section->flags&TRACK_EXIT_180_DEG)end_angle+=2;
-		else if((track_section->flags&TRACK_EXIT_45_DEG_LEFT)&&(track_section->flags&(TRACK_DIAGONAL|TRACK_DIAGONAL_2)))end_angle-=1;
-		else if((track_section->flags&TRACK_EXIT_45_DEG_RIGHT)&&!(track_section->flags&(TRACK_DIAGONAL|TRACK_DIAGONAL_2)))end_angle+=1;
-		if(end_angle<0)end_angle+=4;
-		if(end_angle>3)end_angle-=4;
+		int start_angle = 3;
+		if (rendered_views & 1)start_angle = 0;
+		else if (rendered_views & 2)start_angle = 1;
+		else if (rendered_views & 4)start_angle = 2;
+		if (track_section->flags & (TRACK_DIAGONAL | TRACK_DIAGONAL_2))start_angle = (start_angle + 1) % 4;
+		int end_angle = start_angle;
+		if (track_section->flags & TRACK_EXIT_90_DEG_LEFT)end_angle -= 1;
+		else if (track_section->flags & TRACK_EXIT_90_DEG_RIGHT)end_angle += 1;
+		else if (track_section->flags & TRACK_EXIT_180_DEG)end_angle += 2;
+		else if ((track_section->flags & TRACK_EXIT_45_DEG_LEFT) && (track_section->flags & (TRACK_DIAGONAL | TRACK_DIAGONAL_2)))end_angle -= 1;
+		else if ((track_section->flags & TRACK_EXIT_45_DEG_RIGHT) && !(track_section->flags & (TRACK_DIAGONAL | TRACK_DIAGONAL_2)))end_angle += 1;
+		if (end_angle < 0)end_angle += 4;
+		if (end_angle > 3)end_angle -= 4;
 
-		int start_tie=start_angle <=1;
-		int end_tie=end_angle>1;
+		int start_tie = start_angle <= 1;
+		int end_tie = end_angle > 1;
 
 		//Calculate corrected scale
-		double corrected_length=num_meshes*track_type->length;
-		if(!start_tie)corrected_length-=track_type->tie_length;
-		if(end_tie)corrected_length+=track_type->tie_length;
-		double corrected_scale=track_section->length/corrected_length;
+		double corrected_length = num_meshes * track_type->length;
+		if (!start_tie)corrected_length -= track_type->tie_length;
+		if (end_tie)corrected_length += track_type->tie_length;
+		double corrected_scale = track_section->length / corrected_length;
 
-		double tie_length=corrected_scale*track_type->tie_length;
-		double inter_length=corrected_scale*(track_type->length-track_type->tie_length);
+		double tie_length = corrected_scale * track_type->tie_length;
+		double inter_length = corrected_scale * (track_type->length - track_type->tie_length);
 
-		double offset=0;
+		double offset = 0;
 
-		if(extrude_behind)
+		if (extrude_behind)
 		{
 			num_meshes++;
-			offset-=(extrude_behind ? 1 : 0)*corrected_scale*track_type->length;
+			offset -= (extrude_behind ? 1 : 0) * corrected_scale * track_type->length;
 		}
-		if(extrude_in_front)num_meshes++;
-		for(int i=0; i<2*num_meshes+1; i++)
+		if (extrude_in_front)num_meshes++;
+		for (int i = 0; i < 2 * num_meshes + 1; i++)
 		{
 			track_transform_args_t args;
-			args.scale=corrected_scale;
-			args.offset=offset;
-			args.z_offset=z_offset;
-			args.track_curve=track_section->curve;
-			args.flags=track_section->flags;
-			args.length=track_section->length;
-			if((!(i&1))&&(i !=0||start_tie)&&(i !=2*num_meshes||end_tie))
+			args.scale = corrected_scale;
+			args.offset = offset;
+			args.y_offset = 0.0;
+			args.z_offset = z_offset;
+			args.track_curve = track_section->curve;
+			args.flags = track_section->flags;
+			args.length = track_section->length;
+			if ((!(i & 1)) && (i != 0 || start_tie) && (i != 2 * num_meshes || end_tie))
 			{
-				track_point_t track_point=get_track_point(track_section->curve,track_section->flags,z_offset,args.length,args.offset+track_type->tie_length/2);
+				track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, args.length, args.offset + track_type->tie_length / 2);
 				context_add_model(
-				    context,&(track_type->tie_mesh),
-				    transform(
-				        matrix(track_point.binormal.z,track_point.normal.z,track_point.tangent.z,track_point.binormal.y,track_point.normal.y,track_point.tangent.y,track_point.binormal.x,track_point.normal.x,track_point.tangent.x),
-				        change_coordinates(track_point.position)
-				    ),
-				    track_mask
+					context, &(track_type->tie_mesh),
+					transform(
+						matrix(track_point.binormal.z, track_point.normal.z, track_point.tangent.z, track_point.binormal.y, track_point.normal.y, track_point.tangent.y, track_point.binormal.x, track_point.normal.x, track_point.tangent.x),
+						change_coordinates(track_point.position)
+					),
+					track_mask
 				);
-				context_add_model_transformed(context,mesh_tie,track_transform,&args,track_mask);
-				offset+=tie_length;
+				context_add_model_transformed(context, mesh_tie, track_transform, &args, track_mask);
+				offset += tie_length;
 			}
-			else if(i&1)
+			else if (i & 1)
 			{
-				int use_alt=i&2;
-				if(track_section->flags&TRACK_ALT_INVERT)use_alt=!use_alt;
-				if(extrude_behind)use_alt=!use_alt;
-				if(!(track_type->models_loaded&(1<<MODEL_TRACK_ALT)))use_alt=0;
+				int use_alt = i & 2;
+				if (track_section->flags & TRACK_ALT_INVERT)use_alt = !use_alt;
+				if (extrude_behind)use_alt = !use_alt;
+				if (!(track_type->models_loaded & (1 << MODEL_TRACK_ALT)))use_alt = 0;
 				//Add track model
 				if (!track_mask) {
 					if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask);
 					else context_add_model_transformed(context, mesh, track_transform, &args, track_mask);
 					//Add track mask
-				} else
-				{
-					if(start_tie)args.offset=offset-tie_length;
-					context_add_model_transformed(context,&(track_type->mask),track_transform,&args,0);
 				}
-				offset+=inter_length;
+				else
+				{
+					if (start_tie)args.offset = offset - tie_length;
+					context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);
+				}
+				offset += inter_length;
 			}
 		}
 
@@ -337,27 +402,30 @@ void render_track_section(context_t* context,track_section_t* track_section,trac
 	}
 	else
 	{
-		if(extrude_behind)num_meshes++;
-		if(extrude_in_front)num_meshes++;
-		for(int i=0; i<num_meshes; i++)
+		if (extrude_behind)num_meshes++;
+		if (extrude_in_front)num_meshes++;
+		for (int i = 0; i < num_meshes; i++)
 		{
 			track_transform_args_t args;
-			args.scale=scale;
-			args.offset=(i-(extrude_behind ? 1 : 0))*length;
-			args.z_offset=z_offset;
-			args.track_curve=track_section->curve;
-			args.flags=track_section->flags;
-			args.length=track_section->length;
+			args.scale = scale;
+			args.offset = (i - (extrude_behind ? 1 : 0)) * length;
+			args.y_offset = 0.0;
+			args.z_offset = z_offset;
+			args.track_curve = track_section->curve;
+			args.flags = track_section->flags;
+			args.length = track_section->length;
 
-			int alt_available=track_type->models_loaded&(1<<MODEL_TRACK_ALT);
-			int use_alt=alt_available&&(i&1);
-			if(alt_available&&(track_section->flags&TRACK_ALT_INVERT))use_alt=!use_alt;
+			int alt_available = track_type->models_loaded & (1 << MODEL_TRACK_ALT);
+			int use_alt = alt_available && (i & 1);
+			if (alt_available && (track_section->flags & TRACK_ALT_INVERT))use_alt = !use_alt;
 
 			if (track_mask)
 			{
 				context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);
 			}
 			else {
+				args.y_offset = track_mesh.y_offset;
+
 				if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask);
 				else context_add_model_transformed(context, mesh, track_transform, &args, track_mask);
 
@@ -379,76 +447,87 @@ void render_track_section(context_t* context,track_section_t* track_section,trac
 		}
 	}
 
-	if(track_section->flags&TRACK_SPECIAL_MASK)
+	if (track_section->flags & TRACK_SPECIAL_MASK)
 	{
-		int index=get_special_index(track_section->flags);
-		if(track_type->models_loaded&(1<<index))
+		int index = get_special_index(track_section->flags);
+		if (track_type->models_loaded & (1 << index))
 		{
-			matrix_t mat=views[1];
-			if((track_section->flags&TRACK_SPECIAL_MASK) !=TRACK_SPECIAL_VERTICAL_TWIST_RIGHT&&(track_section->flags&TRACK_SPECIAL_MASK) !=TRACK_SPECIAL_BARREL_ROLL_RIGHT
-			  &&(track_section->flags&TRACK_SPECIAL_MASK) !=TRACK_SPECIAL_CORKSCREW_RIGHT&&(track_section->flags&TRACK_SPECIAL_MASK) !=TRACK_SPECIAL_ZERO_G_ROLL_RIGHT
-			  &&(track_section->flags&TRACK_SPECIAL_MASK) !=TRACK_SPECIAL_LARGE_ZERO_G_ROLL_RIGHT)
+			matrix_t mat = views[1];
+			if ((track_section->flags & TRACK_SPECIAL_MASK) != TRACK_SPECIAL_VERTICAL_TWIST_RIGHT && (track_section->flags & TRACK_SPECIAL_MASK) != TRACK_SPECIAL_BARREL_ROLL_RIGHT
+				&& (track_section->flags & TRACK_SPECIAL_MASK) != TRACK_SPECIAL_CORKSCREW_RIGHT && (track_section->flags & TRACK_SPECIAL_MASK) != TRACK_SPECIAL_ZERO_G_ROLL_RIGHT
+				&& (track_section->flags & TRACK_SPECIAL_MASK) != TRACK_SPECIAL_LARGE_ZERO_G_ROLL_RIGHT)
 			{
-				mat.entries[6]*=-1;
-				mat.entries[7]*=-1;
-				mat.entries[8]*=-1;
+				mat.entries[6] *= -1;
+				mat.entries[7] *= -1;
+				mat.entries[8] *= -1;
 			}
 
-			if((track_section->flags&TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BRAKE || (track_section->flags&TRACK_SPECIAL_MASK) == TRACK_SPECIAL_MAGNETIC_BRAKE || (track_section->flags&TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BLOCK_BRAKE || (track_section->flags&TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BOOSTER)
+			if ((track_section->flags & TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BRAKE || (track_section->flags & TRACK_SPECIAL_MASK) == TRACK_SPECIAL_MAGNETIC_BRAKE || (track_section->flags & TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BLOCK_BRAKE || (track_section->flags & TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BOOSTER)
 			{
-			float special_length=track_type->brake_length;
-				if((track_section->flags&TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BLOCK_BRAKE)special_length=TILE_SIZE;
-			int num_special_meshes=(int)floor(0.5+track_section->length/special_length);
-			float special_scale=track_section->length/(num_special_meshes*special_length);
-			special_length=special_scale*special_length;
-				for(int i=0; i<num_special_meshes; i++)
+				float special_length = track_type->brake_length;
+				if ((track_section->flags & TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BLOCK_BRAKE)special_length = TILE_SIZE;
+				int num_special_meshes = (int)floor(0.5 + track_section->length / special_length);
+				float special_scale = track_section->length / (num_special_meshes * special_length);
+				special_length = special_scale * special_length;
+				for (int i = 0; i < num_special_meshes; i++)
 				{
-				track_transform_args_t args;
-				args.scale=special_scale;
-				args.offset=i*special_length;
-				args.z_offset=z_offset;
-				args.track_curve=track_section->curve;
-				args.flags=track_section->flags;
-				args.length=track_section->length;
+					track_transform_args_t args;
+					args.scale = special_scale;
+					args.offset = i * special_length;
+					args.z_offset = z_offset;
+					args.track_curve = track_section->curve;
+					args.flags = track_section->flags;
+					args.length = track_section->length;
 
-				context_add_model_transformed(context,&(track_type->models[index]),track_transform,&args,track_mask);
+					context_add_model_transformed(context, &(track_type->models[index]), track_transform, &args, track_mask);
 				}
-			} else context_add_model(context,&(track_type->models[index]),transform(mat,vector3(!(track_section->flags&TRACK_VERTICAL) ? -0.5*TILE_SIZE : 0,z_offset-2*CLEARANCE_HEIGHT,0)),track_mask);
+			}
+			else context_add_model(context, &(track_type->models[index]), transform(mat, vector3(!(track_section->flags & TRACK_VERTICAL) ? -0.5 * TILE_SIZE : 0, z_offset - 2 * CLEARANCE_HEIGHT, 0)), track_mask);
 		}
 	}
 
-	if((track_type->flags&TRACK_HAS_SUPPORTS)&&!(track_section->flags&TRACK_NO_SUPPORTS))
+	if ((track_type->flags & TRACK_HAS_SUPPORTS) && !(track_section->flags & TRACK_NO_SUPPORTS))
 	{
-		int num_supports=(int)floor(0.5+track_section->length/track_type->support_spacing);
-		float support_step=track_section->length/num_supports;
-		int entry=0;
-		int exit=0;
-		if(track_section->flags&TRACK_ENTRY_BANK_LEFT)entry=DENOM;
-		else if(track_section->flags&TRACK_ENTRY_BANK_RIGHT)entry=-DENOM;
-		else entry=0;
+		int num_supports = (int)floor(0.5 + track_section->length / track_type->support_spacing);
+		float support_step = track_section->length / num_supports;
+		int entry = 0;
+		int exit = 0;
+		if (track_section->flags & TRACK_ENTRY_BANK_LEFT)entry = DENOM;
+		else if (track_section->flags & TRACK_ENTRY_BANK_RIGHT)entry = -DENOM;
+		else entry = 0;
 
-		if(track_section->flags&TRACK_EXIT_BANK_LEFT)exit=DENOM;
-		else if(track_section->flags&TRACK_EXIT_BANK_RIGHT)exit=-DENOM;
-		else exit=0;
+		if (track_section->flags & TRACK_EXIT_BANK_LEFT)exit = DENOM;
+		else if (track_section->flags & TRACK_EXIT_BANK_RIGHT)exit = -DENOM;
+		else exit = 0;
 
-		for(int i=0; i<num_supports+1; i++)
+		for (int i = 0; i < num_supports + 1; i++)
 		{
-			int u=(i*DENOM)/num_supports;
-			int bank_angle=(entry*(DENOM-u)+(exit*u))/DENOM;
+			int u = (i * DENOM) / num_supports;
+			int bank_angle = (entry * (DENOM - u) + (exit * u)) / DENOM;
 
-			track_point_t track_point=get_track_point(track_section->curve,track_section->flags,z_offset,track_section->length,i*support_step);
+			track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, track_section->length, i * support_step);
 
-			track_point_t support_point=only_yaw(track_point);
+			track_point_t support_point = only_yaw(track_point);
 
-			matrix_t rotation=
-			    matrix(support_point.binormal.x,support_point.normal.x,support_point.tangent.x,support_point.binormal.y,support_point.normal.y,support_point.tangent.y,support_point.binormal.z,support_point.normal.z,support_point.tangent.z);
-			if(bank_angle >=0)rotation=matrix_mult(views[2],rotation);
+			matrix_t rotation =
+				matrix(support_point.binormal.x, support_point.normal.x, support_point.tangent.x, support_point.binormal.y, support_point.normal.y, support_point.tangent.y, support_point.binormal.z, support_point.normal.z, support_point.tangent.z);
+			if (bank_angle >= 0)rotation = matrix_mult(views[2], rotation);
 
-			vector3_t translation=change_coordinates(support_point.position);
-			translation.y-=track_type->pivot/sqrt(track_point.tangent.x*track_point.tangent.x+track_point.tangent.z*track_point.tangent.z)-track_type->pivot;
+			vector3_t translation = change_coordinates(support_point.position);
+			translation.y -= track_type->pivot / sqrt(track_point.tangent.x * track_point.tangent.x + track_point.tangent.z * track_point.tangent.z) - track_type->pivot;
 
-			context_add_model(context,&(track_type->models[get_support_index(bank_angle)]),transform(rotation,translation),track_mask);
+			context_add_model(context, &(track_type->models[get_support_index(bank_angle)]), transform(rotation, translation), track_mask);
 		}
+	}
+}
+
+void render_track_section(context_t* context,track_section_t* track_section,track_type_t* track_type,int extrude_behind,int extrude_in_front,int track_mask,int rendered_views,image_t* images,int subtype)
+{
+	context_begin_render(context);
+
+	for (track_mesh_t& track_mesh : track_type->track_meshes)
+	{
+		add_track_models(context, track_section, track_type, extrude_behind, extrude_in_front, track_mask, rendered_views, images, subtype, track_mesh);
 	}
 
 	context_finalize_render(context);
@@ -615,7 +694,7 @@ int extrude_in_front_odd=(track_section->flags&TRACK_EXIT_45_DEG_LEFT)&&(track_s
 		else
 		{
 			if(views&0x5)render_track_section(context,track_section,track_type,extrude_behind,extrude_in_front_even,track_mask,views&0x5,sprites,subtype);
-			if(views&0xA)render_track_section(context,track_section,track_type,extrude_behind,extrude_in_front_odd,track_mask,views&0xA,sprites,subtype);
+			if(views&0xA)render_track_section(context,track_section,track_type,0,extrude_in_front_odd,track_mask,views&0xA,sprites,subtype);
 		}
 	}
 	else

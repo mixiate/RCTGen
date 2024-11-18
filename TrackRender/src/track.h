@@ -162,6 +162,12 @@ enum models
 #define NUM_MODELS 23
 #define SUPPORT_SPECIAL_START SUPPORT_SPECIAL_STEEP_TO_VERTICAL
 
+struct track_mesh_t
+{
+	mesh_t mesh;
+	float y_offset;
+};
+
 struct track_type_t
 {
 	uint32_t flags;
@@ -169,7 +175,7 @@ struct track_type_t
 	uint64_t lift_groups;
 	int32_t lift_offset;
 	uint32_t models_loaded;
-	mesh_t mesh;
+	std::vector<track_mesh_t> track_meshes;
 	mesh_t mesh_tie;
 	mesh_t lift_mesh;
 	mesh_t lift_mesh_tie;

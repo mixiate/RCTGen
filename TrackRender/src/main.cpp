@@ -270,14 +270,53 @@ int load_track_type(track_type_t* track_type,json_t* json)
 		return 1;
 	}
 
-	if(load_model(&(track_type->mesh),models,"track"))
+	mesh_t track_mesh;
+
+	if(load_model(&(track_mesh),models,"track"))
 	{
-		printf("Error: Track mesh not found\n");
-		return 1;
+		json_t* track_models = json_object_get(json, "track_models");
+		if (track_models == NULL || !json_is_array(track_models))
+		{
+			printf("Error: Track mesh not found in \"models\" and \"track_models\" not found or is not an array\n");
+			return 1;
+		}
+		if (json_array_size(track_models) <= 0)
+		{
+			printf("Error: \"track_models\" array size is 0\n");
+			return 1;
+		}
+		for (int i = 0; i < json_array_size(track_models); i++)
+		{
+			json_t* track_model = json_array_get(track_models, i);
+
+			mesh_t track_mesh;
+			if (load_model(&(track_mesh), track_model, "track"))
+			{
+				printf("Error: Property \"track\" not found or could not load track model\n");
+				return 1;
+			}
+
+			float y_offset_value = 0.0;
+			json_t* y_offset = json_object_get(track_model, "y_offset");
+			if (y_offset != nullptr && json_is_number(y_offset))
+			{
+				y_offset_value = float(json_number_value(y_offset));
+			}
+
+			track_type->track_meshes.push_back(track_mesh_t{ track_mesh, y_offset_value });
+		}
 	}
+	else
+	{
+		track_type->track_meshes.push_back(track_mesh_t{ track_mesh, 0.0 });
+	}
+
 	if(load_model(&(track_type->mask),models,"mask"))
 	{
-		mesh_destroy(&(track_type->mesh));
+		for (auto track_mesh : track_type->track_meshes)
+		{
+			mesh_destroy(&(track_mesh.mesh));
+		}
 		printf("Error: Mask mesh not found\n");
 		return 1;
 	}
@@ -286,7 +325,10 @@ int load_track_type(track_type_t* track_type,json_t* json)
 	{
 		if(load_model(&(track_type->lift_mesh),models,"lift"))
 		{
-			mesh_destroy(&(track_type->mesh));
+			for (auto track_mesh : track_type->track_meshes)
+			{
+				mesh_destroy(&(track_mesh.mesh));
+			}
 			mesh_destroy(&(track_type->mask));
 			printf("Error: Lift mesh not found\n");
 			return 1;
@@ -297,7 +339,10 @@ int load_track_type(track_type_t* track_type,json_t* json)
 	{
 		if(load_model(&(track_type->tie_mesh),models,"tie"))
 		{
-			mesh_destroy(&(track_type->mesh));
+			for (auto track_mesh : track_type->track_meshes)
+			{
+				mesh_destroy(&(track_mesh.mesh));
+			}
 			mesh_destroy(&(track_type->mask));
 			if(track_type->flags&TRACK_HAS_LIFT)mesh_destroy(&(track_type->lift_mesh));
 			printf("Error: separate tie mesh not found\n");
@@ -308,7 +353,10 @@ int load_track_type(track_type_t* track_type,json_t* json)
 		{
 			if(load_model(&(track_type->mesh_tie),models,"track_tie"))
 			{
-				mesh_destroy(&(track_type->mesh));
+				for (auto track_mesh : track_type->track_meshes)
+				{
+					mesh_destroy(&(track_mesh.mesh));
+				}
 				mesh_destroy(&(track_type->mask));
 				mesh_destroy(&(track_type->tie_mesh));
 				if(track_type->flags&TRACK_HAS_LIFT)mesh_destroy(&(track_type->lift_mesh));
@@ -319,7 +367,10 @@ int load_track_type(track_type_t* track_type,json_t* json)
 			{
 				if(load_model(&(track_type->lift_mesh_tie),models,"lift_tie"))
 				{
-					mesh_destroy(&(track_type->mesh));
+					for (auto track_mesh : track_type->track_meshes)
+					{
+						mesh_destroy(&(track_mesh.mesh));
+					}
 					mesh_destroy(&(track_type->mask));
 					mesh_destroy(&(track_type->tie_mesh));
 					mesh_destroy(&(track_type->mesh_tie));
@@ -365,7 +416,10 @@ int load_track_type(track_type_t* track_type,json_t* json)
 		if(result ==0)track_type->models_loaded|=1<<i;
 		else if(result ==1)
 		{
-			mesh_destroy(&(track_type->mesh));
+			for (auto track_mesh : track_type->track_meshes)
+			{
+				mesh_destroy(&(track_mesh.mesh));
+			}
 			mesh_destroy(&(track_type->mask));
 			if(track_type->flags&TRACK_HAS_LIFT)mesh_destroy(&(track_type->lift_mesh));
 			for(int j=0; j<i; j++)mesh_destroy(&(track_type->models[j]));
