@@ -296,22 +296,22 @@ void add_track_models(
 	args.length = track_section->length;
 	if (track_mask)
 	{
-		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);
+		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
 	}
 	else if (!extrude_behind)
 	{
 		args.y_offset = track_mesh.y_offset;
-		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST);
+		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST, vector2(0.0, 0.0));
 	}
 	args.offset = track_section->length;
 	if (track_mask)
 	{
-		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);//track_mask?0:MESH_GHOST);
+		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
 	}
 	else if (!extrude_in_front)
 	{
 		args.y_offset = track_mesh.y_offset;
-		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST);
+		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST, vector2(0.0, 0.0));
 	}
 
 	if (track_type->flags & TRACK_TIE_AT_BOUNDARY)
@@ -361,6 +361,9 @@ void add_track_models(
 			args.track_curve = track_section->curve;
 			args.flags = track_section->flags;
 			args.length = track_section->length;
+
+			const vector2_t uv_offset = vector2(track_mesh.u_offset * i, track_mesh.v_offset * i);
+
 			if ((!(i & 1)) && (i != 0 || start_tie) && (i != 2 * num_meshes || end_tie))
 			{
 				track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, args.length, args.offset + track_type->tie_length / 2);
@@ -372,7 +375,7 @@ void add_track_models(
 					),
 					track_mask
 				);
-				context_add_model_transformed(context, mesh_tie, track_transform, &args, track_mask);
+				context_add_model_transformed(context, mesh_tie, track_transform, &args, track_mask, vector2(0.0, 0.0));
 				offset += tie_length;
 			}
 			else if (i & 1)
@@ -383,14 +386,14 @@ void add_track_models(
 				if (!(track_type->models_loaded & (1 << MODEL_TRACK_ALT)))use_alt = 0;
 				//Add track model
 				if (!track_mask) {
-					if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask);
-					else context_add_model_transformed(context, mesh, track_transform, &args, track_mask);
+					if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask, uv_offset);
+					else context_add_model_transformed(context, mesh, track_transform, &args, track_mask, uv_offset);
 					//Add track mask
 				}
 				else
 				{
 					if (start_tie)args.offset = offset - tie_length;
-					context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);
+					context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
 				}
 				offset += inter_length;
 			}
@@ -419,18 +422,20 @@ void add_track_models(
 			int use_alt = alt_available && (i & 1);
 			if (alt_available && (track_section->flags & TRACK_ALT_INVERT))use_alt = !use_alt;
 
+			const vector2_t uv_offset = vector2(track_mesh.u_offset * i, track_mesh.v_offset * i);
+
 			if (track_mask)
 			{
-				context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0);
+				context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
 			}
 			else {
 				args.y_offset = track_mesh.y_offset;
 
-				if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask);
-				else context_add_model_transformed(context, mesh, track_transform, &args, track_mask);
+				if (use_alt)context_add_model_transformed(context, &(track_type->models[MODEL_TRACK_ALT]), track_transform, &args, track_mask, uv_offset);
+				else context_add_model_transformed(context, mesh, track_transform, &args, track_mask, uv_offset);
 
 				if ((track_type->models_loaded & (1 << MODEL_BASE)) && (track_type->flags & TRACK_HAS_SUPPORTS) && !(track_section->flags & TRACK_NO_SUPPORTS))
-					context_add_model_transformed(context, &(track_type->models[MODEL_BASE]), base_transform, &args, track_mask);
+					context_add_model_transformed(context, &(track_type->models[MODEL_BASE]), base_transform, &args, track_mask, vector2(0.0, 0.0));
 				if (track_type->flags & TRACK_SEPARATE_TIE)
 				{
 					track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, args.length, args.offset + 0.5 * length);
@@ -479,7 +484,7 @@ void add_track_models(
 					args.flags = track_section->flags;
 					args.length = track_section->length;
 
-					context_add_model_transformed(context, &(track_type->models[index]), track_transform, &args, track_mask);
+					context_add_model_transformed(context, &(track_type->models[index]), track_transform, &args, track_mask, vector2(0.0, 0.0));
 				}
 			}
 			else context_add_model(context, &(track_type->models[index]), transform(mat, vector3(!(track_section->flags & TRACK_VERTICAL) ? -0.5 * TILE_SIZE : 0, z_offset - 2 * CLEARANCE_HEIGHT, 0)), track_mask);

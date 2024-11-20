@@ -24,6 +24,7 @@ typedef struct
 {
     struct context_s* context;
     mesh_t* meshes[MAX_MESHES];
+    vector2_t mesh_uv_offsets[MAX_MESHES];
     uint64_t mask[2];
     uint64_t ghost[2];
     uint32_t num_meshes;
@@ -49,7 +50,7 @@ void device_destroy(device_t device);
 void scene_init(scene_t* scene, device_t device);
 void scene_finalize(scene_t* scene);
 void scene_destroy(scene_t* scene);
-void scene_add_model(scene_t* scene, mesh_t* mesh, vertex_t(*transform)(vector3_t, vector3_t, void*), void* data, int flags);
+void scene_add_model(scene_t* scene, mesh_t* mesh, vertex_t(*transform)(vector3_t, vector3_t, void*), void* data, int flags, const vector2_t uv_offset);
 int scene_trace_ray(scene_t* scene, vector3_t origin, vector3_t direction, ray_hit_t* hit);
 int scene_trace_occlusion_ray(scene_t* scene, vector3_t origin, vector3_t direction);
 int scene_is_mask(scene_t* scene, int index);

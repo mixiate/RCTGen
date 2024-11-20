@@ -125,11 +125,12 @@ void occlusionFilter(const struct RTCFilterFunctionNArguments* args)
 
 }
 
-void scene_add_model(scene_t* scene, mesh_t* mesh, vertex_t(*transform)(vector3_t, vector3_t, void*), void* data, int flags)
+void scene_add_model(scene_t* scene, mesh_t* mesh, vertex_t(*transform)(vector3_t, vector3_t, void*), void* data, int flags, const vector2_t uv_offset)
 {
     //Add mesh to list of meshes
     assert(scene->num_meshes < MAX_MESHES);
     scene->meshes[scene->num_meshes] = mesh;
+    scene->mesh_uv_offsets[scene->num_meshes] = uv_offset;
     if (flags & MESH_MASK)bitset_set(scene->mask, scene->num_meshes);
     if (flags & MESH_GHOST)bitset_set(scene->ghost, scene->num_meshes);
     scene->num_meshes++;

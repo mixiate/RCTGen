@@ -303,7 +303,21 @@ int load_track_type(track_type_t* track_type,json_t* json)
 				y_offset_value = float(json_number_value(y_offset));
 			}
 
-			track_type->track_meshes.push_back(track_mesh_t{ track_mesh, y_offset_value });
+			float u_offset_value = 0.0;
+			json_t* u_offset = json_object_get(track_model, "u_offset");
+			if (u_offset != nullptr && json_is_number(u_offset))
+			{
+				u_offset_value = float(json_number_value(u_offset));
+			}
+
+			float v_offset_value = 0.0;
+			json_t* v_offset = json_object_get(track_model, "v_offset");
+			if (v_offset != nullptr && json_is_number(v_offset))
+			{
+				v_offset_value = float(json_number_value(v_offset));
+			}
+
+			track_type->track_meshes.push_back(track_mesh_t{ track_mesh, y_offset_value, u_offset_value, v_offset_value });
 		}
 	}
 	else

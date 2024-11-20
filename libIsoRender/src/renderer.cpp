@@ -59,14 +59,14 @@ vertex_t linear_transform(vector3_t vertex, vector3_t normal, void* matptr)
     return out;
 }
 
-void context_add_model_transformed(context_t* context, mesh_t* mesh, vertex_t(*transform)(vector3_t, vector3_t, void*), void* data, int mask)
+void context_add_model_transformed(context_t* context, mesh_t* mesh, vertex_t(*transform)(vector3_t, vector3_t, void*), void* data, int mask, const vector2_t uv_offset)
 {
-    scene_add_model(&(context->rt_scene), mesh, transform, data, mask);
+    scene_add_model(&(context->rt_scene), mesh, transform, data, mask, uv_offset);
 }
 
 void context_add_model(context_t* context, mesh_t* mesh, transform_t transform, int mask)
 {
-    scene_add_model(&(context->rt_scene), mesh, &linear_transform, &transform, mask);
+    scene_add_model(&(context->rt_scene), mesh, &linear_transform, &transform, mask, vector2(0.0, 0.0));
 }
 
 void context_finalize_render(context_t* context)
@@ -192,6 +192,7 @@ int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t
         if (material->flags & MATERIAL_HAS_TEXTURE)
         {
             vector2_t tex_coord = vector2_add(vector2_add(vector2_mult(mesh->uvs[face->indices[0]], 1.0f - hit.u - hit.v), vector2_mult(mesh->uvs[face->indices[1]], hit.u)), vector2_mult(mesh->uvs[face->indices[2]], hit.v));
+            tex_coord = vector2_add(tex_coord, scene->mesh_uv_offsets[hit.mesh_index]);
             color = texture_sample(&(material->texture), tex_coord);
         }
         else color = material->color;

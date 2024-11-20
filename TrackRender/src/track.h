@@ -166,6 +166,8 @@ struct track_mesh_t
 {
 	mesh_t mesh;
 	float y_offset;
+	float u_offset;
+	float v_offset;
 };
 
 struct track_type_t
