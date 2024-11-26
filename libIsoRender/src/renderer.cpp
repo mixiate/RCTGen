@@ -375,7 +375,15 @@ void image_from_framebuffer(image_t* image, framebuffer_t* framebuffer, palette_
     free(framebuffer->fragments);
 }
 
-void context_render_view_internal(context_t* context, matrix_t view, image_t* image, uint32_t silhouette, float edge_distance)
+void context_render_view_internal(
+    context_t* context,
+    matrix_t view,
+    image_t* image,
+    uint32_t silhouette,
+    float edge_distance,
+    const bool remappable_to_grayscale,
+    const float remappable_to_grayscale_threshold
+)
 {
     matrix_t camera = matrix_mult(context->projection, view);
 
@@ -498,6 +506,28 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
             //If this is a background pixel, there is no need to compute the color
             if (region == FRAGMENT_UNUSED)continue;
 
+            if (remappable_to_grayscale)
+            {
+                vector3_t color = vector3(0, 0, 0);
+                float weight = 0.0;
+                float min_depth = 50000.0;
+                for (int i = 0; i < AA_NUM_SAMPLES_U * AA_NUM_SAMPLES_V; i++)
+                {
+                    if (subsamples[i].region != FRAGMENT_UNUSED && (!(subsamples[i].flags & MATERIAL_NO_BLEED) || (flags & MATERIAL_NO_BLEED)))
+                    {
+                        color = vector3_add(color, vector3_mult(subsamples[i].color, AA_SAMPLE_WEIGHT));
+                        weight += AA_SAMPLE_WEIGHT;
+                    }
+                    min_depth = min_depth < subsamples[i].depth ? min_depth : subsamples[i].depth;
+                }
+                color = vector3_mult(color, 1.0f / weight);
+
+                if (framebuffer.fragments[x + y * framebuffer.width].region != 0 && color.x > remappable_to_grayscale_threshold)
+                {
+                    framebuffer.fragments[x + y * framebuffer.width].region = 0;
+                }
+            }
+
             if (flags & (MATERIAL_BACKGROUND_AA | MATERIAL_BACKGROUND_AA_DARK))
             {
                 //Count samples that fall outside the presumed edge
@@ -550,12 +580,12 @@ void context_render_view_internal(context_t* context, matrix_t view, image_t* im
     free(transformed_lights);
 }
 
-void context_render_view(context_t* context, matrix_t view, image_t* image, float edge_distance)
+void context_render_view(context_t* context, matrix_t view, image_t* image, float edge_distance, const bool remappable_to_grayscale, const float remappable_to_grayscale_threshold)
 {
-    context_render_view_internal(context, view, image, 0, edge_distance);
+    context_render_view_internal(context, view, image, 0, edge_distance, remappable_to_grayscale, remappable_to_grayscale_threshold);
 }
 
 void context_render_silhouette(context_t* context, matrix_t view, image_t* image, float edge_distance)
 {
-    context_render_view_internal(context, view, image, 1, edge_distance);
+    context_render_view_internal(context, view, image, 1, edge_distance, false, 1.0);
 }

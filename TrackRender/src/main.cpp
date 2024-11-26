@@ -551,6 +551,44 @@ int load_track_type(track_type_t* track_type,json_t* json)
 	}
 	else track_type->edge_distance = 4;
 
+	//Load remappable to grayscale
+	json_t* remappable_to_grayscale = json_object_get(json, "remappable_to_grayscale");
+	if (remappable_to_grayscale != NULL)
+	{
+		if (json_is_boolean(remappable_to_grayscale))
+		{
+			track_type->remappable_to_grayscale = json_boolean_value(remappable_to_grayscale);
+		}
+		else
+		{
+			printf("Error: Property \"remappable_to_grayscale\" is not a boolean\n");
+			return 1;
+		}
+	}
+	else
+	{
+		track_type->remappable_to_grayscale = false;
+	}
+
+	//Load remappable to grayscale threshold
+	json_t* remappable_to_grayscale_threshold = json_object_get(json, "remappable_to_grayscale_threshold");
+	if (remappable_to_grayscale_threshold != NULL)
+	{
+		if (json_is_number(remappable_to_grayscale_threshold))
+		{
+			track_type->remappable_to_grayscale_threshold = json_number_value(remappable_to_grayscale_threshold);
+		}
+		else
+		{
+			printf("Error: Property \"remappable_to_grayscale_threshold\" is not a number\n");
+			return 1;
+		}
+	}
+	else
+	{
+		track_type->remappable_to_grayscale_threshold = 0.65;
+	}
+
 	return 0;
 }
 

@@ -193,6 +193,8 @@ struct track_type_t
 	std::string masks_name;
 	float offsets[10][8] = { 0.0 };
 	float edge_distance;
+	bool remappable_to_grayscale = false;
+	float remappable_to_grayscale_threshold = 0.65;
 };
 
 typedef struct
