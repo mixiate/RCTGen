@@ -602,7 +602,7 @@ int load_project(project_t* project, json_t* json)
 
 int main(int argc, char** argv)
 {
-    project_t project;
+    project_t *project = (project_t*) malloc(sizeof(project_t));
 
     const char* filename = NULL;
     int mode = 0;
@@ -682,17 +682,17 @@ int main(int argc, char** argv)
         if (load_lights(lights, &num_lights, light_array))return 1;
     }
 
-    if (load_project(&project, project_json))return 1;
+    if (load_project(project, project_json))return 1;
 
     context_t context;
     context_init(&context, lights, num_lights, palette_rct2(), (mode == 2) ? 0.125 * TILE_SIZE : TILE_SIZE);
     if (mode == 2)
     {
-        if (project_export_test(&project, &context))return 1;
+        if (project_export_test(project, &context))return 1;
     }
     else
     {
-        if (project_export(&project, &context, output_directory, mode == 1))return 1;
+        if (project_export(project, &context, output_directory, mode == 1))return 1;
     }
     context_destroy(&context);
     return 0;
