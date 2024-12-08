@@ -29,6 +29,7 @@ enum
 	SPRITE_GROUP_INLINE_TWIST=8,
 	SPRITE_GROUP_CORKSCREW=16,
 	SPRITE_GROUP_ZERO_G_ROLLS=32,
+    SPRITE_GROUP_GENTLE_TURNS=64,
 };
 
 #define SPRITE_GROUP_BASE (SPRITE_GROUP_ORTHOGONAL|SPRITE_GROUP_DIAGONAL|SPRITE_GROUP_TURN)
@@ -1842,9 +1843,76 @@ sprite_rotation_t zero_g_sprite_rotations[160]={
     {24,8,3,Y(24),-S,-M_PI_8},
 };
 
-#define NUM_SPRITE_GROUPS 6
-int sprite_group_counts[NUM_SPRITE_GROUPS]={176,172,408,40,80,160};
-const sprite_rotation_t* sprite_group_rotations[NUM_SPRITE_GROUPS]={orthogonal_sprite_rotations,diagonal_sprite_rotations,turn_sprite_rotations,inline_twist_sprite_rotations,corkscrew_sprite_rotations,zero_g_sprite_rotations};
+const sprite_rotation_t gentle_turn_sprite_rotations[64] = {
+    {0,2,0,Y(0),G,0.0},
+    {1,2,0,Y(1),G,0.0},
+    {2,2,0,Y(2),G,0.0},
+    {3,2,0,Y(3),G,0.0},
+    {4,2,0,Y(4),G,0.0},
+    {5,2,0,Y(5),G,0.0},
+    {6,2,0,Y(6),G,0.0},
+    {7,2,0,Y(7),G,0.0},
+    {8,2,0,Y(8),G,0.0},
+    {9,2,0,Y(9),G,0.0},
+    {10,2,0,Y(10),G,0.0},
+    {11,2,0,Y(11),G,0.0},
+    {12,2,0,Y(12),G,0.0},
+    {13,2,0,Y(13),G,0.0},
+    {14,2,0,Y(14),G,0.0},
+    {15,2,0,Y(15),G,0.0},
+    {16,2,0,Y(16),G,0.0},
+    {17,2,0,Y(17),G,0.0},
+    {18,2,0,Y(18),G,0.0},
+    {19,2,0,Y(19),G,0.0},
+    {20,2,0,Y(20),G,0.0},
+    {21,2,0,Y(21),G,0.0},
+    {22,2,0,Y(22),G,0.0},
+    {23,2,0,Y(23),G,0.0},
+    {24,2,0,Y(24),G,0.0},
+    {25,2,0,Y(25),G,0.0},
+    {26,2,0,Y(26),G,0.0},
+    {27,2,0,Y(27),G,0.0},
+    {28,2,0,Y(28),G,0.0},
+    {29,2,0,Y(29),G,0.0},
+    {30,2,0,Y(30),G,0.0},
+    {31,2,0,Y(31),G,0.0},
+    {0,6,0,Y(0),-G,0.0},
+    {1,6,0,Y(1),-G,0.0},
+    {2,6,0,Y(2),-G,0.0},
+    {3,6,0,Y(3),-G,0.0},
+    {4,6,0,Y(4),-G,0.0},
+    {5,6,0,Y(5),-G,0.0},
+    {6,6,0,Y(6),-G,0.0},
+    {7,6,0,Y(7),-G,0.0},
+    {8,6,0,Y(8),-G,0.0},
+    {9,6,0,Y(9),-G,0.0},
+    {10,6,0,Y(10),-G,0.0},
+    {11,6,0,Y(11),-G,0.0},
+    {12,6,0,Y(12),-G,0.0},
+    {13,6,0,Y(13),-G,0.0},
+    {14,6,0,Y(14),-G,0.0},
+    {15,6,0,Y(15),-G,0.0},
+    {16,6,0,Y(16),-G,0.0},
+    {17,6,0,Y(17),-G,0.0},
+    {18,6,0,Y(18),-G,0.0},
+    {19,6,0,Y(19),-G,0.0},
+    {20,6,0,Y(20),-G,0.0},
+    {21,6,0,Y(21),-G,0.0},
+    {22,6,0,Y(22),-G,0.0},
+    {23,6,0,Y(23),-G,0.0},
+    {24,6,0,Y(24),-G,0.0},
+    {25,6,0,Y(25),-G,0.0},
+    {26,6,0,Y(26),-G,0.0},
+    {27,6,0,Y(27),-G,0.0},
+    {28,6,0,Y(28),-G,0.0},
+    {29,6,0,Y(29),-G,0.0},
+    {30,6,0,Y(30),-G,0.0},
+    {31,6,0,Y(31),-G,0.0},
+};
+
+#define NUM_SPRITE_GROUPS 7
+int sprite_group_counts[NUM_SPRITE_GROUPS]={176,172,408,40,80,160,64};
+const sprite_rotation_t* sprite_group_rotations[NUM_SPRITE_GROUPS]={orthogonal_sprite_rotations,diagonal_sprite_rotations,turn_sprite_rotations,inline_twist_sprite_rotations,corkscrew_sprite_rotations,zero_g_sprite_rotations,gentle_turn_sprite_rotations};
 
 matrix_t track_point_get_rotation(track_point_t point)
 {
@@ -2281,10 +2349,10 @@ void generate_lane_subposition_data(const float y_offset_orthogonal, const float
     generate_subposition_data(&(track_list_default.medium_turn_left), "LeftQuarterTurn5Tiles", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
     generate_subposition_data(&(track_list_default.medium_turn_left), "RightQuarterTurn5Tiles", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "LeftQuarterTurn5Tiles25DegUp", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "RightQuarterTurn5Tiles25DegUp", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "LeftQuarterTurn5Tiles25DegDown", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "RightQuarterTurn5Tiles25DegDown", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "LeftQuarterTurn5Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "RightQuarterTurn5Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "LeftQuarterTurn5Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "RightQuarterTurn5Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
 
     generate_subposition_data(&(track_list_default.s_bend_left), "LeftSBend", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
     generate_subposition_data(&(track_list_default.s_bend_right), "RightSBend", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
@@ -2292,10 +2360,10 @@ void generate_lane_subposition_data(const float y_offset_orthogonal, const float
     generate_subposition_data(&(track_list_default.small_turn_left), "LeftQuarterTurn3Tiles", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
     generate_subposition_data(&(track_list_default.small_turn_left), "RightQuarterTurn3Tiles", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "LeftQuarterTurn3Tiles25DegUp", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "RightQuarterTurn3Tiles25DegUp", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "LeftQuarterTurn3Tiles25DegDown", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "RightQuarterTurn3Tiles25DegDown", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "LeftQuarterTurn3Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "RightQuarterTurn3Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "LeftQuarterTurn3Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "RightQuarterTurn3Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
 
     generate_subposition_data(&(track_list_default.small_flat_to_steep_up), "FlatToUp60", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
     generate_subposition_data(&(track_list_default.small_steep_to_flat_up), "Up60ToFlat", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
