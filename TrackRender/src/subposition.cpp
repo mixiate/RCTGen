@@ -2046,8 +2046,9 @@ track_point_t get_track_point(track_section_t* track_section,float progress,int 
 
 float track_point_diagonal_factor(const track_point_t& point)
 {
-    float a = abs(point.tangent.x);
-    float b = abs(point.tangent.z);
+    const vector3_t tangent = vector3_normalize(vector3(point.tangent.x, 0.0, point.tangent.z));
+    float a = abs(tangent.x);
+    float b = abs(tangent.z);
     if (a > b)
     {
         std::swap(a, b);
@@ -2432,7 +2433,7 @@ void generate_lane_switching_subposition_data(const float y_offset_orthogonal, c
 void generate_go_kart_subposition_data()
 {
     const float y_offset_orthogonal = -0.75;
-    const float y_offset_diagonal = -0.625;
+    const float y_offset_diagonal = -0.55;
 
     puts("namespace OpenRCT2::LeftLane");
     puts("{");
