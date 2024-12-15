@@ -187,12 +187,17 @@ int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t
             return 1;
         }
 
+        vector2_t tex_coord = vector2(0.0, 0.0);
+        if (material->flags & MATERIAL_HAS_TEXTURE)
+        {
+            tex_coord = vector2_add(vector2_add(vector2_mult(mesh->uvs[face->indices[0]], 1.0f - hit.u - hit.v), vector2_mult(mesh->uvs[face->indices[1]], hit.u)), vector2_mult(mesh->uvs[face->indices[2]], hit.v));
+            tex_coord = vector2_add(tex_coord, scene->mesh_uv_offsets[hit.mesh_index]);
+        }
+
         //Compute surface color
         vector3_t color;
         if (material->flags & MATERIAL_HAS_TEXTURE)
         {
-            vector2_t tex_coord = vector2_add(vector2_add(vector2_mult(mesh->uvs[face->indices[0]], 1.0f - hit.u - hit.v), vector2_mult(mesh->uvs[face->indices[1]], hit.u)), vector2_mult(mesh->uvs[face->indices[2]], hit.v));
-            tex_coord = vector2_add(tex_coord, scene->mesh_uv_offsets[hit.mesh_index]);
             color = texture_sample(&(material->texture), tex_coord);
         }
         else color = material->color;
@@ -203,8 +208,15 @@ int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t
             color = vector3_from_scalar(intensity);
         }
 
+        vector3_t specular_color;
+        if (material->flags & MATERIAL_HAS_SPECULAR_TEXTURE)
+        {
+            specular_color = texture_sample(&(material->specular_texture), tex_coord);
+        }
+        else specular_color = material->specular_color;
+
         //Shade fragment
-        vector3_t shaded_color = shade_fragment(scene, hit.position, hit.normal, view_vector, color, material->specular_color, material->specular_exponent, material->ambient_color, lights, num_lights);
+        vector3_t shaded_color = shade_fragment(scene, hit.position, hit.normal, view_vector, color, specular_color, material->specular_exponent, material->ambient_color, lights, num_lights);
 
         vector3_t normal = hit.normal;
         vector3_t tangent;

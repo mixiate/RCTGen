@@ -21,15 +21,20 @@ enum material_flags
     MATERIAL_BACKGROUND_AA = 16,
     MATERIAL_BACKGROUND_AA_DARK = 32,
     MATERIAL_IS_VISIBLE_MASK = 64,
-    MATERIAL_NO_BLEED = 128
+    MATERIAL_NO_BLEED = 128,
+    MATERIAL_HAS_SPECULAR_TEXTURE = 256,
 };
 
 typedef struct
 {
-    uint8_t flags;
+    uint32_t flags;
     uint8_t region;
     float specular_exponent;
-    vector3_t specular_color;
+    union
+    {
+        texture_t specular_texture;
+        vector3_t specular_color;
+    };
     union
     {
         texture_t texture;

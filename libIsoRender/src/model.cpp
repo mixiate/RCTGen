@@ -226,7 +226,23 @@ int mesh_load_transform(mesh_t* output, const char* filename, matrix_t matrix)
         }
 
         aiColor4D specular;
-        if (aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &specular) == AI_SUCCESS)
+        aiString specular_texture_path;
+        if (aiGetMaterialString(mat, AI_MATKEY_TEXTURE(aiTextureType_SPECULAR, 0), &specular_texture_path) == AI_SUCCESS)
+        {
+            output->materials[i].flags |= MATERIAL_HAS_SPECULAR_TEXTURE;
+            if (texture_load_png(&(output->materials[i].specular_texture), specular_texture_path.data))
+            {
+                printf("Failed to load texture \"%s\"\r\n", specular_texture_path.data);
+                free(output->vertices);
+                free(output->normals);
+                free(output->faces);
+                free(output->materials);
+                //TODO free any textures already loaded	
+                aiReleaseImport(scene);
+                return 1;
+            }
+        }
+        else if (aiGetMaterialColor(mat, AI_MATKEY_COLOR_SPECULAR, &specular) == AI_SUCCESS)
         {
             output->materials[i].specular_color = vector3(specular.r, specular.g, specular.b);
             float specular_strength;
@@ -234,7 +250,6 @@ int mesh_load_transform(mesh_t* output, const char* filename, matrix_t matrix)
             {
                 output->materials[i].specular_color = vector3_mult(output->materials[i].specular_color, specular_strength);
             }
-            //printf("%f,%f,%f\n",specular.r,specular.g,specular.b);
         }
 
         float specular_exponent;
