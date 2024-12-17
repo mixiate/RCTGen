@@ -286,6 +286,8 @@ void add_track_models(
 	}
 
 	//Add ghost models/track masks at start and end
+	const int mask_model_count = track_type->length < 0.5 ? 2 : 1;
+
 	track_transform_args_t args;
 	args.scale = scale;
 	args.offset = -length;
@@ -294,24 +296,31 @@ void add_track_models(
 	args.track_curve = track_section->curve;
 	args.flags = track_section->flags;
 	args.length = track_section->length;
-	if (track_mask)
+	for (int i = 0; i < mask_model_count; i++)
 	{
-		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
-	}
-	else if (!extrude_behind)
-	{
-		args.y_offset = track_mesh.y_offset;
-		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST, vector2(0.0, 0.0));
-	}
-	args.offset = track_section->length;
-	if (track_mask)
-	{
-		context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
-	}
-	else if (!extrude_in_front)
-	{
-		args.y_offset = track_mesh.y_offset;
-		context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST, vector2(0.0, 0.0));
+		args.offset = -length * float(i + 1);
+		if (track_mask)
+		{
+			args.y_offset = 0.0;
+			context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
+		}
+		else if (!extrude_behind)
+		{
+			args.y_offset = track_mesh.y_offset;
+			context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST, vector2(0.0, 0.0));
+		}
+
+		args.offset = track_section->length + (length * float(i));
+		if (track_mask)
+		{
+			args.y_offset = 0.0;
+			context_add_model_transformed(context, &(track_type->mask), track_transform, &args, 0, vector2(0.0, 0.0));
+		}
+		else if (!extrude_in_front)
+		{
+			args.y_offset = track_mesh.y_offset;
+			context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST, vector2(0.0, 0.0));
+		}
 	}
 
 	if (track_type->flags & TRACK_TIE_AT_BOUNDARY)
