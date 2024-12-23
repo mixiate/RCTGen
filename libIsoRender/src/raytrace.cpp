@@ -142,12 +142,12 @@ void scene_add_model(scene_t* scene, mesh_t* mesh, vertex_t(*transform)(vector3_
         return;
     }
 
-    rtcSetGeometryVertexAttributeCount(geom, 1);
+    rtcSetGeometryVertexAttributeCount(geom, 2);
     float* vertices = (float*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, 3 * sizeof(float), mesh->num_vertices);
     float* normals = (float*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX_ATTRIBUTE, 0, RTC_FORMAT_FLOAT3, 3 * sizeof(float), mesh->num_vertices);
-    ;
+    float* distances = (float*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX_ATTRIBUTE, 1, RTC_FORMAT_FLOAT, sizeof(float), mesh->num_vertices);
     unsigned int* indices = (unsigned int*)rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, 3 * sizeof(unsigned int), mesh->num_faces);
-    if (!(vertices && indices && normals))
+    if (!(vertices && indices && normals && distances))
     {
         printf("Failed allocating geometry buffer\n");
         rtcReleaseGeometry(geom);
@@ -163,6 +163,7 @@ void scene_add_model(scene_t* scene, mesh_t* mesh, vertex_t(*transform)(vector3_
         normals[3 * i + 0] = transformed_vertex.normal.x;
         normals[3 * i + 1] = transformed_vertex.normal.y;
         normals[3 * i + 2] = transformed_vertex.normal.z;
+        distances[i] = transformed_vertex.distance;
         scene->x_max = max(scene->x_max, transformed_vertex.vertex.x);
         scene->y_max = max(scene->y_max, transformed_vertex.vertex.y);
         scene->z_max = max(scene->z_max, transformed_vertex.vertex.z);
@@ -231,11 +232,14 @@ int scene_trace_ray(scene_t* scene, vector3_t origin, vector3_t direction, ray_h
         //Interpolate normal
         float position_components[3];
         float normal_components[3];
+        float track_distance;
         rtcInterpolate0(rtcGetGeometry(scene->embree_scene, rayhit.hit.geomID), rayhit.hit.primID, rayhit.hit.u, rayhit.hit.v, RTC_BUFFER_TYPE_VERTEX, 0, position_components, 3);
         rtcInterpolate0(rtcGetGeometry(scene->embree_scene, rayhit.hit.geomID), rayhit.hit.primID, rayhit.hit.u, rayhit.hit.v, RTC_BUFFER_TYPE_VERTEX_ATTRIBUTE, 0, normal_components, 3);
+        rtcInterpolate0(rtcGetGeometry(scene->embree_scene, rayhit.hit.geomID), rayhit.hit.primID, rayhit.hit.u, rayhit.hit.v, RTC_BUFFER_TYPE_VERTEX_ATTRIBUTE, 1, &track_distance, 1);
         hit->position = vector3(position_components[0], position_components[1], position_components[2]);
         hit->normal = vector3_normalize(vector3(normal_components[0], normal_components[1], normal_components[2]));
         hit->distance = rayhit.ray.tfar;
+        hit->track_distance = track_distance;
         return 1;
     }
     return 0;

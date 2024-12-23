@@ -170,6 +170,13 @@ struct track_mesh_t
 	float v_offset;
 };
 
+struct fade_shadow_entry_t
+{
+	std::string track_section_name;
+	int32_t view;
+	float distance;
+};
+
 struct track_type_t
 {
 	uint32_t flags;
@@ -195,6 +202,7 @@ struct track_type_t
 	float edge_distance;
 	bool remappable_to_grayscale = false;
 	float remappable_to_grayscale_threshold = 0.65;
+	std::vector<fade_shadow_entry_t> fade_shadow_entries;
 };
 
 typedef struct

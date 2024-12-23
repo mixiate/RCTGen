@@ -72,7 +72,7 @@ void context_destroy(context_t* context);
 void context_begin_render(context_t* context);
 void context_add_model(context_t* context, mesh_t* mesh, transform_t transform, int mask);
 void context_add_model_transformed(context_t* context, mesh_t* mesh, vertex_t(*transform)(vector3_t, vector3_t, void*), void* data, int mask, const vector2_t uv_offset);
-void context_render_view(context_t* context, matrix_t view_matrix, image_t* image, float edge_distance, const bool remappable_to_grayscale, const float remappable_to_grayscale_threshold);
+void context_render_view(context_t* context, matrix_t view_matrix, image_t* image, float edge_distance, const bool remappable_to_grayscale, const float remappable_to_grayscale_threshold, const bool fade_shadows, const float fade_shadows_distance);
 void context_render_silhouette(context_t* context, matrix_t view, image_t* image, float edge_distance);
 void context_finalize_render(context_t* context);
 void context_end_render(context_t* context);

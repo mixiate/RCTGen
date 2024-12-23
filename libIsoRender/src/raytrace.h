@@ -12,6 +12,7 @@ typedef struct
 {
     vector3_t vertex;
     vector3_t normal;
+    float distance;
 }vertex_t;
 
 typedef enum
@@ -42,6 +43,7 @@ typedef struct
     float ghost_distance;
     float distance;
     float u, v;
+    float track_distance;
 }ray_hit_t;
 
 device_t device_init();

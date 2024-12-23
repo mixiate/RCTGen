@@ -15,6 +15,7 @@
 #include "palette.h"
 #include "vectormath.h"
 #include "model.h"
+#include <algorithm>
 
 //3.67 metres per tile
 #define SQRT_2 1.4142135623731f
@@ -56,6 +57,7 @@ vertex_t linear_transform(vector3_t vertex, vector3_t normal, void* matptr)
     vertex_t out;
     out.vertex = transform_vector(transform, vertex);
     out.normal = vector3_normalize(matrix_vector(transform.matrix, normal));
+    out.distance = 0.0;
     return out;
 }
 
@@ -139,34 +141,57 @@ float vector3_dot_clamped(vector3_t a, vector3_t b)
 }
 
 
-vector3_t shade_fragment(scene_t* scene, vector3_t pos, vector3_t normal, vector3_t view, vector3_t color, vector3_t specular_color, float specular_exponent, vector3_t ambient_color, light_t* lights, uint32_t num_lights)
+vector3_t shade_fragment(
+    scene_t* scene,
+    vector3_t pos,
+    vector3_t normal,
+    vector3_t view,
+    vector3_t color,
+    vector3_t specular_color,
+    float specular_exponent,
+    vector3_t ambient_color,
+    light_t* lights,
+    uint32_t num_lights,
+    const float track_distance,
+    const bool fade_shadows,
+    const float fade_shadows_distance
+)
 {
     vector3_t output_color = vector3(0, 0, 0);
 
     for (uint32_t i = 0; i < num_lights; i++)
     {
-        if (lights[i].shadow && scene_trace_occlusion_ray(scene, pos, lights[i].direction))continue;
+        float shadow_factor = 1.0f;
+        if (lights[i].shadow && scene_trace_occlusion_ray(scene, pos, lights[i].direction))
+        {
+            if (!fade_shadows)
+                continue;
+            shadow_factor = 1.0f - std::clamp(track_distance * (1.0f / fade_shadows_distance), 0.0f, 1.0f);
+        }
         if (lights[i].type == LIGHT_HEMI)
         {
             float diffuse_factor = 0.5f * lights[i].intensity * (1 + vector3_dot(normal, lights[i].direction));
+            diffuse_factor *= shadow_factor;
             output_color = vector3_add(vector3_mult(color, diffuse_factor), output_color);
         }
         else if (lights[i].type == LIGHT_DIFFUSE)
         {
             float diffuse_factor = lights[i].intensity * vector3_dot_clamped(normal, lights[i].direction);
+            diffuse_factor *= shadow_factor;
             output_color = vector3_add(vector3_mult(color, diffuse_factor), output_color);
         }
         else
         {
             vector3_t reflected_light_direction = vector3_sub(vector3_mult(normal, 2.0f * vector3_dot(lights[i].direction, normal)), lights[i].direction);
             float specular_factor = lights[i].intensity * powf(vector3_dot_clamped(reflected_light_direction, view), specular_exponent);
+            specular_factor *= shadow_factor;
             output_color = vector3_add(vector3_mult(specular_color, specular_factor), output_color);
         }
     }
     return vector3_add(output_color, ambient_color);
 }
 
-int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t* lights, uint32_t num_lights, fragment_t* fragment)
+int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t* lights, uint32_t num_lights, fragment_t* fragment, const bool fade_shadows, const float fade_shadows_distance)
 {
     ray_hit_t hit;
     vector3_t view_vector = matrix_vector(camera, vector3(0, 0, -1));
@@ -216,7 +241,21 @@ int scene_sample_point(scene_t* scene, vector2_t point, matrix_t camera, light_t
         else specular_color = material->specular_color;
 
         //Shade fragment
-        vector3_t shaded_color = shade_fragment(scene, hit.position, hit.normal, view_vector, color, specular_color, material->specular_exponent, material->ambient_color, lights, num_lights);
+        vector3_t shaded_color = shade_fragment(
+            scene,
+            hit.position,
+            hit.normal,
+            view_vector,
+            color,
+            specular_color,
+            material->specular_exponent,
+            material->ambient_color,
+            lights,
+            num_lights,
+            hit.track_distance,
+            fade_shadows,
+            fade_shadows_distance
+        );
 
         vector3_t normal = hit.normal;
         vector3_t tangent;
@@ -394,7 +433,9 @@ void context_render_view_internal(
     uint32_t silhouette,
     float edge_distance,
     const bool remappable_to_grayscale,
-    const float remappable_to_grayscale_threshold
+    const float remappable_to_grayscale_threshold,
+    const bool fade_shadows,
+    const float fade_shadows_distance
 )
 {
     matrix_t camera = matrix_mult(context->projection, view);
@@ -463,7 +504,16 @@ void context_render_view_internal(
 
                     if (!silhouette)
                     {
-                        scene_sample_point(&(context->rt_scene), vector2_add(sample_point, subsample_point), camera_inverse, transformed_lights, context->num_lights, subsamples + (i + j * AA_NUM_SAMPLES_U));
+                        scene_sample_point(
+                            &(context->rt_scene),
+                            vector2_add(sample_point, subsample_point),
+                            camera_inverse,
+                            transformed_lights,
+                            context->num_lights,
+                            subsamples + (i + j * AA_NUM_SAMPLES_U),
+                            fade_shadows,
+                            fade_shadows_distance
+                        );
                     }
                     else
                     {
@@ -592,12 +642,21 @@ void context_render_view_internal(
     free(transformed_lights);
 }
 
-void context_render_view(context_t* context, matrix_t view, image_t* image, float edge_distance, const bool remappable_to_grayscale, const float remappable_to_grayscale_threshold)
+void context_render_view(
+    context_t* context,
+    matrix_t view,
+    image_t* image,
+    float edge_distance,
+    const bool remappable_to_grayscale,
+    const float remappable_to_grayscale_threshold,
+    const bool fade_shadows,
+    const float fade_shadows_distance
+)
 {
-    context_render_view_internal(context, view, image, 0, edge_distance, remappable_to_grayscale, remappable_to_grayscale_threshold);
+    context_render_view_internal(context, view, image, 0, edge_distance, remappable_to_grayscale, remappable_to_grayscale_threshold, fade_shadows, fade_shadows_distance);
 }
 
 void context_render_silhouette(context_t* context, matrix_t view, image_t* image, float edge_distance)
 {
-    context_render_view_internal(context, view, image, 1, edge_distance, false, 1.0);
+    context_render_view_internal(context, view, image, 1, edge_distance, false, 1.0, false, 0.0);
 }

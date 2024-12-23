@@ -87,6 +87,7 @@ vertex_t track_transform(vector3_t vertex,vector3_t normal,void* data)
 	vertex_t out;
 	out.vertex=change_coordinates(vector3_add(track_point.position,vector3_add(vector3_mult(track_point.normal,vertex.y),vector3_mult(track_point.binormal,vertex.x))));
 	out.normal=change_coordinates(vector3_add(vector3_mult(track_point.tangent,normal.z),vector3_add(vector3_mult(track_point.normal,normal.y),vector3_mult(track_point.binormal,normal.x))));
+	out.distance = vertex.z / args.length;
 	return out;
 }
 
@@ -104,6 +105,7 @@ vertex_t base_transform(vector3_t vertex,vector3_t normal,void* data)
 	vertex_t out;
 	out.vertex=change_coordinates(vector3_add(track_point.position,vector3_add(vector3_mult(vector3(0,1,0),vertex.y),vector3_mult(track_point.binormal,vertex.x))));
 	out.normal=change_coordinates(vector3_add(vector3_mult(track_point.tangent,normal.z),vector3_add(vector3_mult(track_point.normal,normal.y),vector3_mult(track_point.binormal,normal.x))));
+	out.distance = vertex.z / args.length;
 	return out;
 }
 
@@ -548,10 +550,38 @@ void render_track_section(context_t* context,track_section_t* track_section,trac
 
 	for(int i=0; i<4; i++)
 	{
+		bool fade_shadows = false;
+		float fade_shadows_distance = 1.0f;
+
+		for (auto& fade_shadow_entry : track_type->fade_shadow_entries)
+		{
+			if (fade_shadow_entry.track_section_name == track_section->name && fade_shadow_entry.view == i)
+			{
+				fade_shadows = true;
+				fade_shadows_distance = fade_shadow_entry.distance;
+				break;
+			}
+		}
+
 		if(rendered_views&(1<<i))
 		{
-			if(track_mask)context_render_silhouette(context,rotate_y(0.5*i*M_PI),images+i, track_type->edge_distance);
-			else context_render_view(context,rotate_y(0.5*i*M_PI),images+i, track_type->edge_distance, track_type->remappable_to_grayscale, track_type->remappable_to_grayscale_threshold);
+			if (track_mask)
+			{
+				context_render_silhouette(context, rotate_y(0.5 * i * M_PI), images + i, track_type->edge_distance);
+			}
+			else
+			{
+				context_render_view(
+					context,
+					rotate_y(0.5 * i * M_PI),
+					images + i,
+					track_type->edge_distance,
+					track_type->remappable_to_grayscale,
+					track_type->remappable_to_grayscale_threshold,
+					fade_shadows,
+					fade_shadows_distance
+				);
+			}
 		}
 	}
 	context_end_render(context);

@@ -589,6 +589,51 @@ int load_track_type(track_type_t* track_type,json_t* json)
 		track_type->remappable_to_grayscale_threshold = 0.65;
 	}
 
+	// Load fade shadow entries
+	const json_t* fade_shadows = json_object_get(json, "fade_shadows");
+	if (fade_shadows != NULL && json_is_array(fade_shadows))
+	{
+		for (size_t i = 0; i < json_array_size(fade_shadows); i++)
+		{
+			json_t* fade_shadow_entry = json_array_get(fade_shadows, i);
+
+			if (fade_shadow_entry == nullptr || !json_is_object(fade_shadow_entry))
+			{
+				printf("Error: Fade shadow array contains an element which is not an object\n");
+				return 1;
+			}
+
+			json_t* track_section = json_object_get(fade_shadow_entry, "track_section");
+			if (track_section == NULL || !json_is_string(track_section))
+			{
+				printf("Error: Property \"track_section\" not found or is not a string in fade shadow array entry\n");
+				return 1;
+			}
+
+			json_t* view = json_object_get(fade_shadow_entry, "view");
+			if (view == NULL || !json_is_integer(view))
+			{
+				printf("Error: Property \"view\" not found or is not an integer in fade shadow array entry\n");
+				return 1;
+			}
+
+			json_t* distance = json_object_get(fade_shadow_entry, "distance");
+			if (distance == NULL || !json_is_number(distance))
+			{
+				printf("Error: Property \"distance\" not found or is not a number in fade shadow array entry\n");
+				return 1;
+			}
+
+			track_type->fade_shadow_entries.emplace_back(
+				fade_shadow_entry_t { 
+					std::string(json_string_value(track_section)),
+					int32_t(json_integer_value(view)),
+					float(json_number_value(distance))
+				}
+			);
+		}
+	}
+
 	return 0;
 }
 
