@@ -552,7 +552,7 @@ void context_render_view_internal(
                 int inside_samples = 0;
                 for (int i = 0; i < AA_NUM_SAMPLES_U * AA_NUM_SAMPLES_V; i++)
                 {
-                    if (!(subsamples[i].depth > min_depth + edge_distance || (subsamples[i].region == FRAGMENT_UNUSED && !subsamples[i].flags & MATERIAL_IS_MASK) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))inside_samples++;
+                    if (!(subsamples[i].depth > min_depth + edge_distance || (subsamples[i].region == FRAGMENT_UNUSED && !(subsamples[i].flags & MATERIAL_IS_MASK)) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))inside_samples++;
                 }
                 //If more than three samples found, use the forwardmost point
                 if (inside_samples > 3)
@@ -602,7 +602,7 @@ void context_render_view_internal(
                 {
                     if ((!(subsamples[i].flags & MATERIAL_NO_BLEED) || (flags & MATERIAL_NO_BLEED)) && !((subsamples[i].ghost_depth <= depth + edge_distance && subsamples[i].depth > depth + edge_distance)))
                     {
-                        if (!(subsamples[i].depth > depth + edge_distance || (subsamples[i].region == FRAGMENT_UNUSED && !subsamples[i].flags & MATERIAL_IS_MASK) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))//TODO assumes there's only one material with NO_BLEED set 
+                        if (!(subsamples[i].depth > depth + edge_distance || (subsamples[i].region == FRAGMENT_UNUSED && !(subsamples[i].flags & MATERIAL_IS_MASK)) || (subsamples[i].flags & MATERIAL_IS_VISIBLE_MASK)))//TODO assumes there's only one material with NO_BLEED set 
                         {
                             color = vector3_add(color, vector3_mult(subsamples[i].color, AA_SAMPLE_WEIGHT));
                             weight += AA_SAMPLE_WEIGHT;
