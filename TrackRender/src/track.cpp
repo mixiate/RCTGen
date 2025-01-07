@@ -248,19 +248,31 @@ void add_track_models(
 	const int subtype,
 	track_mesh_t& track_mesh)
 {
+	float track_section_length_end_addition = 0.0;
+
+	for (auto& track_section_length_entry : track_type->track_section_length_entries)
+	{
+		if (track_section_length_entry.track_section_name == track_section->name)
+		{
+			track_section_length_end_addition = track_section_length_entry.end_addition;
+			break;
+		}
+	}
+	const float track_section_length = track_section->length + track_section_length_end_addition;
+
 	float z_offset = ((track_type->z_offset / 8.0) * CLEARANCE_HEIGHT);
 
 	float y_offset_track_section_length = recalculate_y_offset_track_section_length(track_section, track_mesh.y_offset, z_offset);
 
 	int num_meshes = (int)floor(0.5 + y_offset_track_section_length / track_type->length);
-	float scale = track_section->length / (num_meshes * track_type->length);
+	float scale = track_section_length / (num_meshes * track_type->length);
 
 	//If alternating track meshes are used,we would prefer to have an even number of meshes as long as it doesn't cause too much distortion
 	if (track_type->models_loaded & (1 << MODEL_TRACK_ALT))
 	{
-		int num_meshes_even = 2 * (int)floor(0.5 + track_section->length / (2 * track_type->length));
-		if (track_section->flags & TRACK_ALT_PREFER_ODD)num_meshes_even = 2 * (int)floor(track_section->length / (2 * track_type->length)) + 1;
-		float scale_even = track_section->length / (num_meshes_even * track_type->length);
+		int num_meshes_even = 2 * (int)floor(0.5 + track_section_length / (2 * track_type->length));
+		if (track_section->flags & TRACK_ALT_PREFER_ODD)num_meshes_even = 2 * (int)floor(track_section_length / (2 * track_type->length)) + 1;
+		float scale_even = track_section_length / (num_meshes_even * track_type->length);
 		if (scale_even > 0.9 && scale_even < 1.11111)
 		{
 			num_meshes = num_meshes_even;
@@ -297,7 +309,7 @@ void add_track_models(
 	args.z_offset = z_offset;
 	args.track_curve = track_section->curve;
 	args.flags = track_section->flags;
-	args.length = track_section->length;
+	args.length = track_section_length;
 	for (int i = 0; i < mask_model_count; i++)
 	{
 		args.offset = -length * float(i + 1);
@@ -312,7 +324,7 @@ void add_track_models(
 			context_add_model_transformed(context, mesh, track_transform, &args, MESH_GHOST, vector2(0.0, 0.0));
 		}
 
-		args.offset = track_section->length + (length * float(i));
+		args.offset = track_section_length + (length * float(i));
 		if (track_mask)
 		{
 			args.y_offset = 0.0;
@@ -349,7 +361,7 @@ void add_track_models(
 		double corrected_length = num_meshes * track_type->length;
 		if (!start_tie)corrected_length -= track_type->tie_length;
 		if (end_tie)corrected_length += track_type->tie_length;
-		double corrected_scale = track_section->length / corrected_length;
+		double corrected_scale = track_section_length / corrected_length;
 
 		double tie_length = corrected_scale * track_type->tie_length;
 		double inter_length = corrected_scale * (track_type->length - track_type->tie_length);
@@ -371,7 +383,7 @@ void add_track_models(
 			args.z_offset = z_offset;
 			args.track_curve = track_section->curve;
 			args.flags = track_section->flags;
-			args.length = track_section->length;
+			args.length = track_section_length;
 
 			const vector2_t uv_offset = vector2(track_mesh.u_offset * i, track_mesh.v_offset * i);
 
@@ -427,7 +439,7 @@ void add_track_models(
 			args.z_offset = z_offset;
 			args.track_curve = track_section->curve;
 			args.flags = track_section->flags;
-			args.length = track_section->length;
+			args.length = track_section_length;
 
 			int alt_available = track_type->models_loaded & (1 << MODEL_TRACK_ALT);
 			int use_alt = alt_available && (i & 1);
@@ -482,8 +494,8 @@ void add_track_models(
 			{
 				float special_length = track_type->brake_length;
 				if ((track_section->flags & TRACK_SPECIAL_MASK) == TRACK_SPECIAL_BLOCK_BRAKE)special_length = TILE_SIZE;
-				int num_special_meshes = (int)floor(0.5 + track_section->length / special_length);
-				float special_scale = track_section->length / (num_special_meshes * special_length);
+				int num_special_meshes = (int)floor(0.5 + track_section_length / special_length);
+				float special_scale = track_section_length / (num_special_meshes * special_length);
 				special_length = special_scale * special_length;
 				for (int i = 0; i < num_special_meshes; i++)
 				{
@@ -493,7 +505,7 @@ void add_track_models(
 					args.z_offset = z_offset;
 					args.track_curve = track_section->curve;
 					args.flags = track_section->flags;
-					args.length = track_section->length;
+					args.length = track_section_length;
 
 					context_add_model_transformed(context, &(track_type->models[index]), track_transform, &args, track_mask, vector2(0.0, 0.0));
 				}
@@ -504,8 +516,8 @@ void add_track_models(
 
 	if ((track_type->flags & TRACK_HAS_SUPPORTS) && !(track_section->flags & TRACK_NO_SUPPORTS))
 	{
-		int num_supports = (int)floor(0.5 + track_section->length / track_type->support_spacing);
-		float support_step = track_section->length / num_supports;
+		int num_supports = (int)floor(0.5 + track_section_length / track_type->support_spacing);
+		float support_step = track_section_length / num_supports;
 		int entry = 0;
 		int exit = 0;
 		if (track_section->flags & TRACK_ENTRY_BANK_LEFT)entry = DENOM;
@@ -521,7 +533,7 @@ void add_track_models(
 			int u = (i * DENOM) / num_supports;
 			int bank_angle = (entry * (DENOM - u) + (exit * u)) / DENOM;
 
-			track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, track_section->length, i * support_step);
+			track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, track_section_length, i * support_step);
 
 			track_point_t support_point = only_yaw(track_point);
 

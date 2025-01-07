@@ -625,10 +625,47 @@ int load_track_type(track_type_t* track_type,json_t* json)
 			}
 
 			track_type->fade_shadow_entries.emplace_back(
-				fade_shadow_entry_t { 
+				fade_shadow_entry_t {
 					std::string(json_string_value(track_section)),
 					int32_t(json_integer_value(view)),
 					float(json_number_value(distance))
+				}
+			);
+		}
+	}
+
+	// Load track section length entries
+	const json_t* track_section_length = json_object_get(json, "track_section_length");
+	if (track_section_length != NULL && json_is_array(track_section_length))
+	{
+		for (size_t i = 0; i < json_array_size(track_section_length); i++)
+		{
+			json_t* track_section_length_entry = json_array_get(track_section_length, i);
+
+			if (track_section_length_entry == nullptr || !json_is_object(track_section_length_entry))
+			{
+				printf("Error: Track section length array contains an element which is not an object\n");
+				return 1;
+			}
+
+			json_t* track_section = json_object_get(track_section_length_entry, "track_section");
+			if (track_section == NULL || !json_is_string(track_section))
+			{
+				printf("Error: Property \"track_section\" not found or is not a string in track section length array entry\n");
+				return 1;
+			}
+
+			json_t* end_addition = json_object_get(track_section_length_entry, "end_addition");
+			if (end_addition == NULL || !json_is_number(end_addition))
+			{
+				printf("Error: Property \"end_addition\" not found or is not a number in track section length array entry\n");
+				return 1;
+			}
+
+			track_type->track_section_length_entries.emplace_back(
+				track_section_length_entry_t {
+					std::string(json_string_value(track_section)),
+					float(json_number_value(end_addition))
 				}
 			);
 		}
