@@ -2,7 +2,7 @@
 [project]
 name = "RCT2RideGen"
 languages = ["CXX"]
-msvc-runtime = "static"
+msvc-runtime = "dynamic"
 cmake-after = '''
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
@@ -11,11 +11,6 @@ cmake-after = '''
     find_package(jansson CONFIG REQUIRED)
     find_package(libzip CONFIG REQUIRED)
 '''
-
-[settings]
-CMAKE_MSVC_RUNTIME_LIBRARY = "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-CMAKE_LIBRARY_OUTPUT_DIRECTORY = "${CMAKE_BINARY_DIR}/$<CONFIG>"
-CMAKE_RUNTIME_OUTPUT_DIRECTORY = "${CMAKE_BINARY_DIR}/$<CONFIG>"
 
 [target.IsoRender]
 type = "static"
@@ -45,6 +40,7 @@ link-libraries = [
     "jansson::jansson",
     "assimp::assimp",
 ]
+compile-features = ["cxx_std_20"]
 
 [target.TestIsoRender]
 type = "executable"
@@ -54,6 +50,7 @@ sources = [
 link-libraries = [
     "IsoRender",
 ]
+compile-features = ["cxx_std_20"]
 
 [target.makevehicle]
 type = "executable"
@@ -70,6 +67,7 @@ add_custom_command(TARGET makevehicle PRE_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                    ${CMAKE_SOURCE_DIR}/examples $<TARGET_FILE_DIR:makevehicle>/examples)
 """
+compile-features = ["cxx_std_20"]
 
 [target.maketrack]
 type = "executable"
@@ -82,12 +80,12 @@ sources = [
 headers = [
     "TrackRender/src/track.h",
     "TrackRender/src/sprites.h",
-    "TrackRender/src/rmc_tie.h",
 ]
 link-libraries = [
     "IsoRender",
     "libzip::zip",
 ]
+compile-features = ["cxx_std_20"]
 
 [target.subposition]
 type = "executable"
@@ -98,9 +96,9 @@ sources = [
 headers = [
     "TrackRender/src/track.h",
     "TrackRender/src/sprites.h",
-    "TrackRender/src/rmc_tie.h",
 ]
 link-libraries = [
     "IsoRender",
     "libzip::zip",
 ]
+compile-features = ["cxx_std_20"]

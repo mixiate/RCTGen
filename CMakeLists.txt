@@ -3,15 +3,12 @@
 
 cmake_minimum_required(VERSION 3.15)
 
-# Enable support for MSVC_RUNTIME_LIBRARY
-cmake_policy(SET CMP0091 NEW)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 	message(FATAL_ERROR "In-tree builds are not supported. Run CMake from a separate directory: cmake -B build")
 endif()
 
-message("${CMAKE_MODULE_PATH}")
+# Enable support for MSVC_RUNTIME_LIBRARY
+cmake_policy(SET CMP0091 NEW)
 
 set(CMKR_ROOT_PROJECT OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -27,13 +24,12 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 	# Create a configure-time dependency on cmake.toml to improve IDE support
-	configure_file(cmake.toml cmake.toml COPYONLY)
-endif()
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS cmake.toml)
+	if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+	endif()
 
-# Settings
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>")
+endif()
 
 project(RCT2RideGen
 	LANGUAGES
@@ -42,34 +38,38 @@ project(RCT2RideGen
 
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
-    find_package(embree 3 REQUIRED)
-    find_package(assimp REQUIRED)
-    find_package(jansson REQUIRED)
-    find_package(libzip REQUIRED)
+    find_package(embree 3 CONFIG REQUIRED)
+    find_package(assimp CONFIG REQUIRED)
+    find_package(jansson CONFIG REQUIRED)
+    find_package(libzip CONFIG REQUIRED)
 
 # Target: IsoRender
 set(IsoRender_SOURCES
-	"libIsoRender/src/vectormath.cpp"
-	"libIsoRender/src/renderer.cpp"
-	"libIsoRender/src/model.cpp"
-	"libIsoRender/src/palette.cpp"
-	"libIsoRender/src/raytrace.cpp"
-	"libIsoRender/src/image.cpp"
-	"libIsoRender/src/pack.cpp"
-	"libIsoRender/src/color.h"
-	"libIsoRender/src/image.h"
-	"libIsoRender/src/model.h"
-	"libIsoRender/src/palette.h"
-	"libIsoRender/src/raytrace.h"
-	"libIsoRender/src/renderer.h"
-	"libIsoRender/src/vectormath.h"
 	cmake.toml
+	"libIsoRender/src/color.h"
+	"libIsoRender/src/image.cpp"
+	"libIsoRender/src/image.h"
+	"libIsoRender/src/model.cpp"
+	"libIsoRender/src/model.h"
+	"libIsoRender/src/pack.cpp"
+	"libIsoRender/src/palette.cpp"
+	"libIsoRender/src/palette.h"
+	"libIsoRender/src/raytrace.cpp"
+	"libIsoRender/src/raytrace.h"
+	"libIsoRender/src/renderer.cpp"
+	"libIsoRender/src/renderer.h"
+	"libIsoRender/src/vectormath.cpp"
+	"libIsoRender/src/vectormath.h"
 )
 
 add_library(IsoRender STATIC)
 
 target_sources(IsoRender PRIVATE ${IsoRender_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${IsoRender_SOURCES})
+
+target_compile_features(IsoRender PUBLIC
+	cxx_std_20
+)
 
 target_include_directories(IsoRender PUBLIC
 	"libIsoRender/src"
@@ -85,14 +85,18 @@ target_link_libraries(IsoRender PUBLIC
 
 # Target: TestIsoRender
 set(TestIsoRender_SOURCES
-	"libIsoRender/src/main.cpp"
 	cmake.toml
+	"libIsoRender/src/main.cpp"
 )
 
 add_executable(TestIsoRender)
 
 target_sources(TestIsoRender PRIVATE ${TestIsoRender_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${TestIsoRender_SOURCES})
+
+target_compile_features(TestIsoRender PRIVATE
+	cxx_std_20
+)
 
 target_link_libraries(TestIsoRender PRIVATE
 	IsoRender
@@ -115,6 +119,10 @@ add_executable(makevehicle)
 target_sources(makevehicle PRIVATE ${makevehicle_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${makevehicle_SOURCES})
 
+target_compile_features(makevehicle PRIVATE
+	cxx_std_20
+)
+
 target_link_libraries(makevehicle PRIVATE
 	IsoRender
 	libzip::zip
@@ -133,11 +141,11 @@ add_custom_command(TARGET makevehicle PRE_BUILD
 # Target: maketrack
 set(maketrack_SOURCES
 	"TrackRender/src/main.cpp"
-	"TrackRender/src/track.cpp"
-	"TrackRender/src/track_sections.cpp"
 	"TrackRender/src/sprites.cpp"
-	"TrackRender/src/track.h"
 	"TrackRender/src/sprites.h"
+	"TrackRender/src/track.cpp"
+	"TrackRender/src/track.h"
+	"TrackRender/src/track_sections.cpp"
 	cmake.toml
 )
 
@@ -145,6 +153,10 @@ add_executable(maketrack)
 
 target_sources(maketrack PRIVATE ${maketrack_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${maketrack_SOURCES})
+
+target_compile_features(maketrack PRIVATE
+	cxx_std_20
+)
 
 target_link_libraries(maketrack PRIVATE
 	IsoRender
@@ -158,10 +170,10 @@ endif()
 
 # Target: subposition
 set(subposition_SOURCES
-	"TrackRender/src/subposition.cpp"
-	"TrackRender/src/track_sections.cpp"
-	"TrackRender/src/track.h"
 	"TrackRender/src/sprites.h"
+	"TrackRender/src/subposition.cpp"
+	"TrackRender/src/track.h"
+	"TrackRender/src/track_sections.cpp"
 	cmake.toml
 )
 
@@ -169,6 +181,10 @@ add_executable(subposition)
 
 target_sources(subposition PRIVATE ${subposition_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${subposition_SOURCES})
+
+target_compile_features(subposition PRIVATE
+	cxx_std_20
+)
 
 target_link_libraries(subposition PRIVATE
 	IsoRender
@@ -179,4 +195,3 @@ get_directory_property(CMKR_VS_STARTUP_PROJECT DIRECTORY ${PROJECT_SOURCE_DIR} D
 if(NOT CMKR_VS_STARTUP_PROJECT)
 	set_property(DIRECTORY ${PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT subposition)
 endif()
-
