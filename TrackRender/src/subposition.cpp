@@ -2146,7 +2146,7 @@ track_point_t track_point_swap_lanes(
 //Generate the subposition data for a track piece
 //Reverse value is difference in height (in pixels)between final tile element base and track element end +1
 //Inverted track is 3 pixels higher than upright track of same height
-void generate_view_subposition_data(track_section_t* track_section,const char* name,int groups,int view,int reverse, const float y_offset_orthogonal, const float y_offset_diagonal, const bool swap_lanes)
+void generate_view_subposition_data(track_section_t* track_section,const char* name,int groups,int view,int reverse, const bool indent, const float y_offset_orthogonal, const float y_offset_diagonal, const bool swap_lanes)
 {
 	//Calculate start and finish angles
 	track_point_t start=track_section->curve(0);
@@ -2184,7 +2184,7 @@ void generate_view_subposition_data(track_section_t* track_section,const char* n
 	printf("Skip finish %d %d\n",(((finish_angle&0xFE)+2*view)%8==2)||(((finish_angle&0xFE)+2*view)%8==4),((finish_angle&0xFE)+2*view)%8);
 	*/
 
-	printf("CREATE_VEHICLE_INFO(TrackVehicleInfo%s%d,{\n",name,view);
+	printf("%sCREATE_VEHICLE_INFO(TrackVehicleInfo%s%d,{\n", indent ? "    " : "",name,view);
 	int count=0;
 	int done=0;
 	float progress=0;
@@ -2233,7 +2233,7 @@ void generate_view_subposition_data(track_section_t* track_section,const char* n
 			float h=sqrt(point.tangent.x*point.tangent.x+point.tangent.z*point.tangent.z);
 			//printf("Pitch %.1f (%d %d %d)\n",atan2(point.tangent.y,h)*180/M_PI,rotation.yaw_sprite,rotation.pitch_sprite,rotation.bank_sprite);
 
-			printf("{% 7d,% 5d,% 5d,% 3d,% 3d,% 3d },",cur_sub.x,cur_sub.y,cur_sub.z,(8*view+rotation.yaw_sprite+(reverse ? 0 : 0)) % 32,rotation.pitch_sprite,rotation.bank_sprite);
+			printf("%s{% 7d,% 5d,% 5d,% 3d,% 3d,% 3d },", indent ? "    " : "",cur_sub.x,cur_sub.y,cur_sub.z,(8*view+rotation.yaw_sprite+(reverse ? 0 : 0)) % 32,rotation.pitch_sprite,rotation.bank_sprite);
 			if(count % 5 ==4)putchar('\n');
 			count++;
 		}
@@ -2267,14 +2267,14 @@ void generate_view_subposition_data(track_section_t* track_section,const char* n
 		progress+=0.01*i;
 		//printf("Progress %f\n",progress);
 	}
-	puts("})\n");
+	printf("%s})\n", indent ? "    " : "");
 }
 
-void generate_subposition_data(track_section_t* track_section,const char* name,int groups,int reverse, const float y_offset_orthogonal, const float y_offset_diagonal, const bool swap_lanes)
+void generate_subposition_data(track_section_t* track_section,const char* name,int groups,int reverse, const bool indent, const float y_offset_orthogonal, const float y_offset_diagonal, const bool swap_lanes)
 {
 	for(int i=0; i<4; i++)
 	{
-		generate_view_subposition_data(track_section,name,groups,i,reverse, y_offset_orthogonal, y_offset_diagonal, swap_lanes);
+		generate_view_subposition_data(track_section,name,groups,i,reverse, indent, y_offset_orthogonal, y_offset_diagonal, swap_lanes);
 	}
 }
 
@@ -2340,94 +2340,94 @@ void calc_g_forces(track_section_t* track_section)
 
 void generate_lane_subposition_data(const float y_offset_orthogonal, const float y_offset_diagonal)
 {
-    generate_subposition_data(&(track_list_default.steep), "Up60", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_to_steep_up), "Up25ToUp60", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_to_gentle_up), "Up60ToUp25", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep), "Down60", SPRITE_GROUP_ORTHOGONAL, 65, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_to_gentle_up), "Down25ToDown60", SPRITE_GROUP_ORTHOGONAL, 33, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_to_steep_up), "Down60ToDown25", SPRITE_GROUP_ORTHOGONAL, 33, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep), "Up60", SPRITE_GROUP_ORTHOGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_to_steep_up), "Up25ToUp60", SPRITE_GROUP_ORTHOGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_to_gentle_up), "Up60ToUp25", SPRITE_GROUP_ORTHOGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep), "Down60", SPRITE_GROUP_ORTHOGONAL, 65, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_to_gentle_up), "Down25ToDown60", SPRITE_GROUP_ORTHOGONAL, 33, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_to_steep_up), "Down60ToDown25", SPRITE_GROUP_ORTHOGONAL, 33, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.medium_turn_left), "LeftQuarterTurn5Tiles", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.medium_turn_left), "RightQuarterTurn5Tiles", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_left), "LeftQuarterTurn5Tiles", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_left), "RightQuarterTurn5Tiles", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "LeftQuarterTurn5Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "RightQuarterTurn5Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "LeftQuarterTurn5Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "RightQuarterTurn5Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "LeftQuarterTurn5Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "RightQuarterTurn5Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_right_gentle_up), "LeftQuarterTurn5Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.medium_turn_left_gentle_up), "RightQuarterTurn5Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.s_bend_left), "LeftSBend", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.s_bend_right), "RightSBend", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.s_bend_left), "LeftSBend", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.s_bend_right), "RightSBend", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.small_turn_left), "LeftQuarterTurn3Tiles", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_turn_left), "RightQuarterTurn3Tiles", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_left), "LeftQuarterTurn3Tiles", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_left), "RightQuarterTurn3Tiles", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "LeftQuarterTurn3Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "RightQuarterTurn3Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "LeftQuarterTurn3Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "RightQuarterTurn3Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "LeftQuarterTurn3Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "RightQuarterTurn3Tiles25DegUp", SPRITE_GROUP_GENTLE_TURNS, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_right_gentle_up), "LeftQuarterTurn3Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_turn_left_gentle_up), "RightQuarterTurn3Tiles25DegDown", SPRITE_GROUP_GENTLE_TURNS, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.small_flat_to_steep_up), "FlatToUp60", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_steep_to_flat_up), "Up60ToFlat", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_steep_to_flat_up), "FlatToDown60", SPRITE_GROUP_ORTHOGONAL, 25, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_flat_to_steep_up), "Down60ToFlat", SPRITE_GROUP_ORTHOGONAL, 25, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_flat_to_steep_up), "FlatToUp60", SPRITE_GROUP_ORTHOGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_steep_to_flat_up), "Up60ToFlat", SPRITE_GROUP_ORTHOGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_steep_to_flat_up), "FlatToDown60", SPRITE_GROUP_ORTHOGONAL, 25, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_flat_to_steep_up), "Down60ToFlat", SPRITE_GROUP_ORTHOGONAL, 25, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.flat_to_steep_up), "FlatToUp60LongBase", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_to_flat_up), "Up60ToFlatLongBase", SPRITE_GROUP_ORTHOGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.flat_to_steep_up), "Down60ToFlatLongBase", SPRITE_GROUP_ORTHOGONAL, 49, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_to_flat_up), "FlatToDown60LongBase", SPRITE_GROUP_ORTHOGONAL, 9, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.flat_to_steep_up), "FlatToUp60LongBase", SPRITE_GROUP_ORTHOGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_to_flat_up), "Up60ToFlatLongBase", SPRITE_GROUP_ORTHOGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.flat_to_steep_up), "Down60ToFlatLongBase", SPRITE_GROUP_ORTHOGONAL, 49, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_to_flat_up), "FlatToDown60LongBase", SPRITE_GROUP_ORTHOGONAL, 9, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "LeftEighthToDiag", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "RightEighthToDiag", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "LeftEighthToOrthogonal", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "RightEighthToOrthogonal", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "LeftEighthToDiag", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "RightEighthToDiag", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "LeftEighthToOrthogonal", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "RightEighthToOrthogonal", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.flat_diag), "DiagFlat", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_diag), "DiagUp25", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_diag), "DiagUp60", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.flat_to_gentle_up_diag), "DiagFlatToUp25", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_to_steep_up_diag), "DiagUp25ToUp60", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_to_gentle_up_diag), "DiagUp60ToUp25", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_to_flat_up_diag), "DiagUp25ToFlat", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_diag), "DiagDown25", SPRITE_GROUP_DIAGONAL, 17, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_diag), "DiagDown60", SPRITE_GROUP_DIAGONAL, 65, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_to_flat_up_diag), "DiagFlatToDown25", SPRITE_GROUP_DIAGONAL, 9, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.steep_to_gentle_up_diag), "DiagDown25ToDown60", SPRITE_GROUP_DIAGONAL, 33, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.gentle_to_steep_up_diag), "DiagDown60ToDown25", SPRITE_GROUP_DIAGONAL, 33, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.flat_to_gentle_up_diag), "DiagDown25ToFlat", SPRITE_GROUP_DIAGONAL, 9, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.flat_diag), "DiagFlat", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_diag), "DiagUp25", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_diag), "DiagUp60", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.flat_to_gentle_up_diag), "DiagFlatToUp25", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_to_steep_up_diag), "DiagUp25ToUp60", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_to_gentle_up_diag), "DiagUp60ToUp25", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_to_flat_up_diag), "DiagUp25ToFlat", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_diag), "DiagDown25", SPRITE_GROUP_DIAGONAL, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_diag), "DiagDown60", SPRITE_GROUP_DIAGONAL, 65, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_to_flat_up_diag), "DiagFlatToDown25", SPRITE_GROUP_DIAGONAL, 9, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.steep_to_gentle_up_diag), "DiagDown25ToDown60", SPRITE_GROUP_DIAGONAL, 33, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.gentle_to_steep_up_diag), "DiagDown60ToDown25", SPRITE_GROUP_DIAGONAL, 33, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.flat_to_gentle_up_diag), "DiagDown25ToFlat", SPRITE_GROUP_DIAGONAL, 9, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.small_flat_to_steep_up_diag), "DiagFlatToUp60", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_steep_to_flat_up_diag), "DiagUp60ToFlat", SPRITE_GROUP_DIAGONAL, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_steep_to_flat_up_diag), "DiagFlatToDown60", SPRITE_GROUP_DIAGONAL, 25, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.small_flat_to_steep_up_diag), "DiagDown60ToFlat", SPRITE_GROUP_DIAGONAL, 25, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_flat_to_steep_up_diag), "DiagFlatToUp60", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_steep_to_flat_up_diag), "DiagUp60ToFlat", SPRITE_GROUP_DIAGONAL, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_steep_to_flat_up_diag), "DiagFlatToDown60", SPRITE_GROUP_DIAGONAL, 25, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.small_flat_to_steep_up_diag), "DiagDown60ToFlat", SPRITE_GROUP_DIAGONAL, 25, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.large_turn_left_to_diag_gentle_up), "LeftEighthToDiagUp25", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_diag_gentle_up), "RightEighthToDiagUp25", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_orthogonal_gentle_up), "LeftEighthToDiagDown25", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_left_to_orthogonal_gentle_up), "RightEighthToDiagDown25", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_diag_gentle_up), "LeftEighthToDiagUp25", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_diag_gentle_up), "RightEighthToDiagUp25", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_orthogonal_gentle_up), "LeftEighthToDiagDown25", SPRITE_GROUP_BASE, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_orthogonal_gentle_up), "RightEighthToDiagDown25", SPRITE_GROUP_BASE, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
 
-    generate_subposition_data(&(track_list_default.large_turn_left_to_orthogonal_gentle_up), "LeftEighthToOrthogonalUp25", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_orthogonal_gentle_up), "RightEighthToOrthogonalUp25", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_diag_gentle_up), "LeftEighthToOrthogonalDown25", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
-    generate_subposition_data(&(track_list_default.large_turn_left_to_diag_gentle_up), "RightEighthToOrthogonalDown25", SPRITE_GROUP_BASE, 17, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_orthogonal_gentle_up), "LeftEighthToOrthogonalUp25", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_orthogonal_gentle_up), "RightEighthToOrthogonalUp25", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_diag_gentle_up), "LeftEighthToOrthogonalDown25", SPRITE_GROUP_BASE, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_diag_gentle_up), "RightEighthToOrthogonalDown25", SPRITE_GROUP_BASE, 17, true, y_offset_orthogonal, y_offset_diagonal, false);
 }
 
 void generate_lane_switching_subposition_data(const float y_offset_orthogonal, const float y_offset_diagonal)
 {
-    generate_subposition_data(&(track_list_default.medium_turn_left), "LeftQuarterTurn5Tiles", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, true);
-    generate_subposition_data(&(track_list_default.medium_turn_left), "RightQuarterTurn5Tiles", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.medium_turn_left), "LeftQuarterTurn5Tiles", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.medium_turn_left), "RightQuarterTurn5Tiles", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, true);
 
-    generate_subposition_data(&(track_list_default.s_bend_left), "LeftSBend", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, true);
-    generate_subposition_data(&(track_list_default.s_bend_right), "RightSBend", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.s_bend_left), "LeftSBend", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.s_bend_right), "RightSBend", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, true);
 
-    generate_subposition_data(&(track_list_default.small_turn_left), "LeftQuarterTurn3Tiles", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, true);
-    generate_subposition_data(&(track_list_default.small_turn_left), "RightQuarterTurn3Tiles", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.small_turn_left), "LeftQuarterTurn3Tiles", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.small_turn_left), "RightQuarterTurn3Tiles", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, true);
 
-    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "LeftEighthToDiag", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, true);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "RightEighthToDiag", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, true);
-    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "LeftEighthToOrthogonal", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, true);
-    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "RightEighthToOrthogonal", SPRITE_GROUP_BASE, 1, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "LeftEighthToDiag", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "RightEighthToDiag", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.large_turn_right_to_diag), "LeftEighthToOrthogonal", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.large_turn_left_to_diag), "RightEighthToOrthogonal", SPRITE_GROUP_BASE, 1, true, y_offset_orthogonal, y_offset_diagonal, true);
 
-    generate_subposition_data(&(track_list_default.flat_diag), "DiagFlat", SPRITE_GROUP_BASE, 0, y_offset_orthogonal, y_offset_diagonal, true);
+    generate_subposition_data(&(track_list_default.flat_diag), "DiagFlat", SPRITE_GROUP_BASE, 0, true, y_offset_orthogonal, y_offset_diagonal, true);
 }
 
 void generate_go_kart_subposition_data()
