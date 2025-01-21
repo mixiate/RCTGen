@@ -124,7 +124,7 @@ vector3_t matrix_vector(matrix_t mat, vector3_t vector)
 
 transform_t transform(matrix_t mat, vector3_t vec)
 {
-    transform_t trans = { mat,vec };
+    transform_t trans = { mat,vec,0.0 };
     return trans;
 }
 transform_t transform_compose(transform_t a, transform_t b)
@@ -132,11 +132,17 @@ transform_t transform_compose(transform_t a, transform_t b)
     transform_t result;
     result.matrix = matrix_mult(a.matrix, b.matrix);
     result.translation = vector3_add(matrix_vector(a.matrix, b.translation), a.translation);
+    result.distance = 0.0;
     return result;
 }
 vector3_t transform_vector(transform_t transform, vector3_t vector)
 {
     return vector3_add(matrix_vector(transform.matrix, vector), transform.translation);
+}
+transform_t transform_with_distance(matrix_t mat, vector3_t vec, const float distance)
+{
+    transform_t trans = { mat,vec,distance };
+    return trans;
 }
 
 

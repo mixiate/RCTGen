@@ -57,7 +57,7 @@ vertex_t linear_transform(vector3_t vertex, vector3_t normal, void* matptr)
     vertex_t out;
     out.vertex = transform_vector(transform, vertex);
     out.normal = vector3_normalize(matrix_vector(transform.matrix, normal));
-    out.distance = 0.0;
+    out.distance = transform.distance;
     return out;
 }
 

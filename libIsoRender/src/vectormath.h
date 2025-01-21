@@ -21,6 +21,7 @@ typedef struct
 {
     matrix_t matrix;
     vector3_t translation;
+    float distance;
 }transform_t;
 
 vector2_t vector2(float x, float y);
@@ -56,5 +57,6 @@ matrix_t rotate_z(float angle);
 transform_t transform(matrix_t matrix, vector3_t vector);
 transform_t transform_compose(transform_t transform, transform_t vector);
 vector3_t transform_vector(transform_t transform, vector3_t vector);
+transform_t transform_with_distance(matrix_t matrix, vector3_t vector, const float distance);
 
 #endif // FIXED_H_INCLUDED

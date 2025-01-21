@@ -464,9 +464,10 @@ void add_track_models(
 					track_point_t track_point = get_track_point(track_section->curve, track_section->flags, z_offset, args.length, args.offset + 0.5 * length);
 					context_add_model(
 						context, &(track_type->tie_mesh),
-						transform(
+						transform_with_distance(
 							matrix(track_point.binormal.z, track_point.normal.z, track_point.tangent.z, track_point.binormal.y, track_point.normal.y, track_point.tangent.y, track_point.binormal.x, track_point.normal.x, track_point.tangent.x),
-							change_coordinates(track_point.position)
+							change_coordinates(track_point.position),
+							(args.offset + 0.5 * length) / track_section_length
 						),
 						track_mask
 					);
