@@ -656,6 +656,9 @@ int offset_table_index_with_rot(track_point_t track,int rot)
 	else if (compare_vec(track.tangent, vector3(-TILE_SIZE, 2 * CLEARANCE_HEIGHT, TILE_SIZE), rot) && banked)return right | 9;
 	//Inverted
 	else if (track.normal.y < -0.9)return 5;
+	// Vertical
+	else if (compare_vec(track.normal, vector3(0, 0, -1), rot))
+		return 10;
 	return 0xFF;
 }
 

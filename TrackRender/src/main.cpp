@@ -526,6 +526,14 @@ int load_track_type(track_type_t* track_type,json_t* json)
 		}
 		load_offsets(offsets_diagonal_gentle_bank, track_type->offsets[9]);
 
+		const json_t* offsets_vertical = json_object_get(offsets, "vertical");
+		if (offsets_vertical == NULL || !json_is_array(offsets_vertical))
+		{
+			printf("Error: Property \"vertical\" not found or is not an array\n");
+			return 1;
+		}
+		load_offsets(offsets_vertical, track_type->offsets[10]);
+
 		track_type->flags |= TRACK_SPECIAL_OFFSETS;
 	}
 

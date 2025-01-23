@@ -204,7 +204,7 @@ struct track_type_t
 	float z_offset;
 	float support_spacing;
 	std::string masks_name;
-	float offsets[10][8] = { 0.0 };
+	float offsets[11][8] = { 0.0 };
 	float edge_distance;
 	bool remappable_to_grayscale = false;
 	float remappable_to_grayscale_threshold = 0.65;
