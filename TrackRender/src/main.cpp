@@ -483,109 +483,376 @@ int load_lights(light_t* lights,int* lights_count,json_t* json)
 	return 0;
 }
 
+int is_in_mask(int x, int y, mask_t* mask);
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <tuple>
+#include <format>
+
+void dump_mask(const char* name, track_section_t& track_section) {
+	char desc_file_name[512];
+	sprintf(desc_file_name, "C:/Files/masks/default/%s.json", name);
+	std::ofstream mask_desc;
+	mask_desc.open(desc_file_name);
+
+	mask_desc << "[\n";
+
+	for (int view_i = 0; view_i < 4; view_i++) {
+		const auto view = track_section.views[view_i];
+
+		const int dimensions = 768;
+
+		std::vector<std::tuple<std::string, image_t>> images;
+
+		mask_desc << "    {\n";
+
+		mask_desc << std::format("        \"uses_track_mask\": {},\n", view.flags & VIEW_NEEDS_TRACK_MASK ? true : false);
+		mask_desc << std::format("        \"enforce_non_overlapping\": {},\n", view.flags & VIEW_ENFORCE_NON_OVERLAPPING ? true : false);
+		mask_desc << "        \"masks\": [\n";
+
+		if (view.num_sprites == 0)
+		{
+			mask_desc << "        ]\n";
+
+			if (view_i == 3) {
+				mask_desc << "    }\n";
+			}
+			else {
+				mask_desc << "    },\n";
+			}
+
+			continue;
+		}
+
+		for (int mask_i = 0; mask_i < view.num_sprites; mask_i++)
+		{
+			mask_desc << "            {\n";
+
+			if (view.masks == nullptr) {
+				mask_desc << "                \"use_mask\": false,\n";
+				mask_desc << "                \"image_path\": \"\",\n";
+				mask_desc << "                \"color\": 0,\n";
+				mask_desc << "                \"mask_type\": \"none\",\n";
+				mask_desc << "                \"offset_x\": " << 0 << ",\n";
+				mask_desc << "                \"offset_y\": " << 0 << ",\n";
+				mask_desc << "                \"flipped\": false\n";
+			}
+			else {
+				auto mask = view.masks[mask_i];
+
+				image_t image;
+				image_new(&image, dimensions, dimensions, 0, 0, 0);
+
+				for (int x = 0; x < dimensions; x++) {
+					for (int y = 0; y < dimensions; y++) {
+						image.pixels[y * dimensions + x] = is_in_mask(x - (dimensions / 2), y - (dimensions / 2), &mask) ? 202 : 0;
+					}
+				}
+
+				bool unique = false;
+
+				if (images.size() > 0) {
+					const auto other_image = std::get<1>(images.at(images.size() - 1));
+
+					size_t first_sum = 0;
+					size_t second_sum = 0;
+
+					for (int x = 0; x < dimensions; x++) {
+						for (int y = 0; y < dimensions; y++) {
+							first_sum += image.pixels[y * dimensions + x];
+							second_sum += other_image.pixels[y * dimensions + x];
+
+							if (first_sum != second_sum) {
+								unique = true;
+							}
+						}
+					}
+				}
+
+				int color = 202 + images.size();
+				if (images.size() && !unique) {
+					color -= 1;
+				}
+
+				mask_desc << "                \"use_mask\": true,\n";
+
+				char image_path_buffer[512];
+				sprintf(image_path_buffer, "                \"image_path\": \"%s_%d.png\",\n", name, view_i + 1);
+
+				mask_desc << image_path_buffer;
+				mask_desc << std::format("                \"color\": {},\n", color);
+				if (mask.track_mask_op == TRACK_MASK_NONE) {
+					mask_desc << "                \"mask_type\": \"none\",\n";
+				}
+				if (mask.track_mask_op == TRACK_MASK_DIFFERENCE) {
+					mask_desc << "                \"mask_type\": \"difference\",\n";
+				}
+				if (mask.track_mask_op == TRACK_MASK_INTERSECT) {
+					mask_desc << "                \"mask_type\": \"intersect\",\n";
+				}
+				if (mask.track_mask_op == TRACK_MASK_UNION) {
+					mask_desc << "                \"mask_type\": \"union\",\n";
+				}
+				if (mask.track_mask_op == TRACK_MASK_TRANSFER_NEXT) {
+					mask_desc << "                \"mask_type\": \"transfer_next\",\n";
+				}
+				mask_desc << "                \"offset_x\": " << mask.x_offset << ",\n";
+				mask_desc << "                \"offset_y\": " << mask.y_offset << ",\n";
+				mask_desc << "                \"flipped\": false\n";
+
+				if (unique || images.size() == 0) {
+					const auto image_file_path = std::format("C:/Files/masks/default/{}_{}_{}.png", name, view_i + 1, images.size() + 1);
+
+					images.push_back(std::make_tuple(image_file_path, image));
+				}
+			}
+
+			if (mask_i == view.num_sprites - 1) {
+				mask_desc << "            }\n";
+			}
+			else {
+				mask_desc << "            },\n";
+			}
+		}
+
+		mask_desc << "        ]\n";
+
+		if (view_i == 3) {
+			mask_desc << "    }\n";
+		}
+		else {
+			mask_desc << "    },\n";
+		}
+
+		bool overlaps = false;
+
+		for (size_t i = 0; i < images.size(); i++) {
+			const image_t& current_image = std::get<1>(images.at(i));
+
+			for (size_t j = 0; j < images.size(); j++) {
+				if (i == j)
+					continue;
+
+				const image_t& other_image = std::get<1>(images.at(j));
+
+				for (int x = 0; x < dimensions; x++) {
+					for (int y = 0; y < dimensions; y++) {
+						if (current_image.pixels[y * dimensions + x] != 0 && other_image.pixels[y * dimensions + x] != 0) {
+							overlaps = true;
+							goto break_out;
+						}
+					}
+				}
+			}
+		}
+
+	break_out:
+		if (images.size()) {
+			if (overlaps) {
+				printf("%s\n", name);
+				for (auto image_desc : images) {
+					FILE* file;
+					file = fopen(std::get<0>(image_desc).c_str(), "wb");
+
+					image_write_png(&std::get<1>(image_desc), file);
+
+					fclose(file);
+				}
+			}
+			else {
+				image_t image;
+				image_new(&image, dimensions, dimensions, 0, 0, 0);
+
+				for (size_t i = 0; i < images.size(); i++) {
+					const image_t& split_image = std::get<1>(images.at(i));
+
+					for (int x = 0; x < dimensions; x++) {
+						for (int y = 0; y < dimensions; y++) {
+							if (split_image.pixels[y * dimensions + x]) {
+								image.pixels[y * dimensions + x] = split_image.pixels[y * dimensions + x] + i;
+							}
+						}
+					}
+				}
+
+				const auto image_file_path = std::format("C:/Files/masks/default/{}_{}.png", name, view_i + 1);
+
+				FILE* file;
+				file = fopen(image_file_path.c_str(), "wb");
+
+				image_write_png(&image, file);
+
+				fclose(file);
+			}
+		}
+	}
+
+	mask_desc << "]\n";
+
+	mask_desc.close();
+}
+
+void dump_masks() {
+	track_list_t track_list = track_list_default;
+
+	/*dump_mask("flat", track_list.flat);
+	dump_mask("flat_asymmetric", track_list.flat_asymmetric);
+	dump_mask("brake", track_list.brake);
+	dump_mask("brake_diag", track_list.brake_diag);
+	dump_mask("brake_gentle", track_list.brake_gentle);
+	dump_mask("brake_gentle_diag", track_list.brake_gentle_diag);
+	dump_mask("magnetic_brake", track_list.magnetic_brake);
+	dump_mask("magnetic_brake_diag", track_list.magnetic_brake_diag);
+	dump_mask("magnetic_brake_gentle", track_list.magnetic_brake_gentle);
+	dump_mask("magnetic_brake_gentle_diag", track_list.magnetic_brake_gentle_diag);
+	dump_mask("block_brake", track_list.block_brake);
+	dump_mask("block_brake_diag", track_list.block_brake_diag);
+	dump_mask("booster", track_list.booster);
+	dump_mask("flat_to_gentle_up", track_list.flat_to_gentle_up);
+	dump_mask("gentle_up_to_flat", track_list.gentle_up_to_flat);
+	dump_mask("gentle", track_list.gentle);
+	dump_mask("gentle_to_steep_up", track_list.gentle_to_steep_up);
+	dump_mask("steep_to_gentle_up", track_list.steep_to_gentle_up);
+	dump_mask("steep", track_list.steep);
+	dump_mask("steep_to_vertical_up", track_list.steep_to_vertical_up);
+	dump_mask("vertical_to_steep_up", track_list.vertical_to_steep_up);
+	dump_mask("vertical", track_list.vertical);
+	dump_mask("small_turn_left", track_list.small_turn_left);
+	dump_mask("medium_turn_left", track_list.medium_turn_left);
+	dump_mask("large_turn_left_to_diag", track_list.large_turn_left_to_diag);
+	dump_mask("large_turn_right_to_diag", track_list.large_turn_right_to_diag);
+	dump_mask("flat_diag", track_list.flat_diag);
+	dump_mask("flat_to_gentle_up_diag", track_list.flat_to_gentle_up_diag);
+	dump_mask("gentle_to_flat_up_diag", track_list.gentle_to_flat_up_diag);
+	dump_mask("gentle_diag", track_list.gentle_diag);
+	dump_mask("gentle_to_steep_up_diag", track_list.gentle_to_steep_up_diag);
+	dump_mask("steep_to_gentle_up_diag", track_list.steep_to_gentle_up_diag);
+	dump_mask("steep_diag", track_list.steep_diag);
+	dump_mask("flat_to_left_bank", track_list.flat_to_left_bank);
+	dump_mask("flat_to_right_bank", track_list.flat_to_right_bank);
+	dump_mask("left_bank_to_gentle_up", track_list.left_bank_to_gentle_up);
+	dump_mask("right_bank_to_gentle_up", track_list.right_bank_to_gentle_up);
+	dump_mask("gentle_up_to_left_bank", track_list.gentle_up_to_left_bank);
+	dump_mask("gentle_up_to_right_bank", track_list.gentle_up_to_right_bank);
+	dump_mask("left_bank", track_list.left_bank);
+	dump_mask("flat_to_left_bank_diag", track_list.flat_to_left_bank_diag);
+	dump_mask("flat_to_right_bank_diag", track_list.flat_to_right_bank_diag);
+	dump_mask("left_bank_to_gentle_up_diag", track_list.left_bank_to_gentle_up_diag);
+	dump_mask("right_bank_to_gentle_up_diag", track_list.right_bank_to_gentle_up_diag);
+	dump_mask("gentle_up_to_left_bank_diag", track_list.gentle_up_to_left_bank_diag);
+	dump_mask("gentle_up_to_right_bank_diag", track_list.gentle_up_to_right_bank_diag);
+	dump_mask("left_bank_diag", track_list.left_bank_diag);
+	dump_mask("small_turn_left_bank", track_list.small_turn_left_bank);
+	dump_mask("medium_turn_left_bank", track_list.medium_turn_left_bank);
+	dump_mask("large_turn_left_to_diag_bank", track_list.large_turn_left_to_diag_bank);
+	dump_mask("large_turn_right_to_diag_bank", track_list.large_turn_right_to_diag_bank);
+	dump_mask("small_turn_left_gentle_up", track_list.small_turn_left_gentle_up);
+	dump_mask("small_turn_right_gentle_up", track_list.small_turn_right_gentle_up);
+	dump_mask("medium_turn_left_gentle_up", track_list.medium_turn_left_gentle_up);
+	dump_mask("medium_turn_right_gentle_up", track_list.medium_turn_right_gentle_up);
+	dump_mask("very_small_turn_left_steep_up", track_list.very_small_turn_left_steep_up);
+	dump_mask("very_small_turn_right_steep_up", track_list.very_small_turn_right_steep_up);
+	dump_mask("vertical_twist_left_up", track_list.vertical_twist_left_up);
+	dump_mask("vertical_twist_right_up", track_list.vertical_twist_right_up);
+	dump_mask("gentle_up_to_gentle_up_left_bank", track_list.gentle_up_to_gentle_up_left_bank);
+	dump_mask("gentle_up_to_gentle_up_right_bank", track_list.gentle_up_to_gentle_up_right_bank);
+	dump_mask("gentle_up_left_bank_to_gentle_up", track_list.gentle_up_left_bank_to_gentle_up);
+	dump_mask("gentle_up_right_bank_to_gentle_up", track_list.gentle_up_right_bank_to_gentle_up);
+	dump_mask("left_bank_to_gentle_up_left_bank", track_list.left_bank_to_gentle_up_left_bank);
+	dump_mask("gentle_up_left_bank_to_left_bank", track_list.gentle_up_left_bank_to_left_bank);
+	dump_mask("right_bank_to_gentle_up_right_bank", track_list.right_bank_to_gentle_up_right_bank);
+	dump_mask("gentle_up_right_bank_to_right_bank", track_list.gentle_up_right_bank_to_right_bank);
+	dump_mask("gentle_up_left_bank", track_list.gentle_up_left_bank);
+	dump_mask("gentle_up_right_bank", track_list.gentle_up_right_bank);
+	dump_mask("flat_to_gentle_up_left_bank", track_list.flat_to_gentle_up_left_bank);
+	dump_mask("flat_to_gentle_up_right_bank", track_list.flat_to_gentle_up_right_bank);
+	dump_mask("gentle_up_left_bank_to_flat", track_list.gentle_up_left_bank_to_flat);
+	dump_mask("gentle_up_right_bank_to_flat", track_list.gentle_up_right_bank_to_flat);
+	dump_mask("small_turn_left_bank_gentle_up", track_list.small_turn_left_bank_gentle_up);
+	dump_mask("small_turn_right_bank_gentle_up", track_list.small_turn_right_bank_gentle_up);
+	dump_mask("medium_turn_left_bank_gentle_up", track_list.medium_turn_left_bank_gentle_up);
+	dump_mask("medium_turn_right_bank_gentle_up", track_list.medium_turn_right_bank_gentle_up);
+	dump_mask("s_bend_left", track_list.s_bend_left);
+	dump_mask("s_bend_right", track_list.s_bend_right);
+	dump_mask("s_bend_left_bank", track_list.s_bend_left_bank);
+	dump_mask("s_bend_right_bank", track_list.s_bend_right_bank);
+	dump_mask("small_helix_left_up", track_list.small_helix_left_up);
+	dump_mask("small_helix_right_up", track_list.small_helix_right_up);
+	dump_mask("medium_helix_left_up", track_list.medium_helix_left_up);
+	dump_mask("medium_helix_right_up", track_list.medium_helix_right_up);
+	dump_mask("barrel_roll_left", track_list.barrel_roll_left);
+	dump_mask("barrel_roll_right", track_list.barrel_roll_right);
+	dump_mask("inline_twist_left", track_list.inline_twist_left);
+	dump_mask("inline_twist_right", track_list.inline_twist_right);
+	dump_mask("half_loop", track_list.half_loop);
+	dump_mask("vertical_loop_left", track_list.left_vertical_loop);
+	dump_mask("vertical_loop_right", track_list.right_vertical_loop);
+	dump_mask("medium_half_loop_left", track_list.medium_half_loop_left);
+	dump_mask("medium_half_loop_right", track_list.medium_half_loop_right);
+	dump_mask("large_half_loop_left", track_list.large_half_loop_left);
+	dump_mask("large_half_loop_right", track_list.large_half_loop_right);
+	dump_mask("flat_to_steep_up", track_list.flat_to_steep_up);
+	dump_mask("steep_to_flat_up", track_list.steep_to_flat_up);
+	dump_mask("small_flat_to_steep_up", track_list.small_flat_to_steep_up);
+	dump_mask("small_steep_to_flat_up", track_list.small_steep_to_flat_up);
+	dump_mask("small_flat_to_steep_up_diag", track_list.small_flat_to_steep_up_diag);
+	dump_mask("small_steep_to_flat_up_diag", track_list.small_steep_to_flat_up_diag);
+	dump_mask("quarter_loop_up", track_list.quarter_loop_up);
+	dump_mask("corkscrew_left", track_list.corkscrew_left);
+	dump_mask("corkscrew_right", track_list.corkscrew_right);
+	dump_mask("large_corkscrew_left", track_list.large_corkscrew_left);
+	dump_mask("large_corkscrew_right", track_list.large_corkscrew_right);
+	dump_mask("zero_g_roll_left", track_list.zero_g_roll_left);
+	dump_mask("zero_g_roll_right", track_list.zero_g_roll_right);
+	dump_mask("large_zero_g_roll_left", track_list.large_zero_g_roll_left);
+	dump_mask("large_zero_g_roll_right", track_list.large_zero_g_roll_right);
+	dump_mask("small_turn_left_bank_to_gentle_up", track_list.small_turn_left_bank_to_gentle_up);
+	dump_mask("small_turn_right_bank_to_gentle_up", track_list.small_turn_right_bank_to_gentle_up);
+	dump_mask("launched_lift", track_list.launched_lift);
+	dump_mask("large_turn_left_to_diag_gentle_up", track_list.large_turn_left_to_diag_gentle_up);
+	dump_mask("large_turn_right_to_diag_gentle_up", track_list.large_turn_right_to_diag_gentle_up);
+	dump_mask("large_turn_left_to_orthogonal_gentle_up", track_list.large_turn_left_to_orthogonal_gentle_up);
+	dump_mask("large_turn_right_to_orthogonal_gentle_up", track_list.large_turn_right_to_orthogonal_gentle_up);
+	dump_mask("gentle_up_to_gentle_up_left_bank_diag", track_list.gentle_up_to_gentle_up_left_bank_diag);
+	dump_mask("gentle_up_to_gentle_up_right_bank_diag", track_list.gentle_up_to_gentle_up_right_bank_diag);
+	dump_mask("gentle_up_left_bank_to_gentle_up_diag", track_list.gentle_up_left_bank_to_gentle_up_diag);
+	dump_mask("gentle_up_right_bank_to_gentle_up_diag", track_list.gentle_up_right_bank_to_gentle_up_diag);
+	dump_mask("left_bank_to_gentle_up_left_bank_diag", track_list.left_bank_to_gentle_up_left_bank_diag);
+	dump_mask("right_bank_to_gentle_up_right_bank_diag", track_list.right_bank_to_gentle_up_right_bank_diag);
+	dump_mask("gentle_up_left_bank_to_left_bank_diag", track_list.gentle_up_left_bank_to_left_bank_diag);
+	dump_mask("gentle_up_right_bank_to_right_bank_diag", track_list.gentle_up_right_bank_to_right_bank_diag);
+	dump_mask("gentle_up_left_bank_diag", track_list.gentle_up_left_bank_diag);
+	dump_mask("gentle_up_right_bank_diag", track_list.gentle_up_right_bank_diag);
+	dump_mask("flat_to_gentle_up_left_bank_diag", track_list.flat_to_gentle_up_left_bank_diag);
+	dump_mask("flat_to_gentle_up_right_bank_diag", track_list.flat_to_gentle_up_right_bank_diag);
+	dump_mask("gentle_up_left_bank_to_flat_diag", track_list.gentle_up_left_bank_to_flat_diag);
+	dump_mask("gentle_up_right_bank_to_flat_diag", track_list.gentle_up_right_bank_to_flat_diag);
+	dump_mask("large_turn_left_bank_to_diag_gentle_up", track_list.large_turn_left_bank_to_diag_gentle_up);
+	dump_mask("large_turn_right_bank_to_diag_gentle_up", track_list.large_turn_right_bank_to_diag_gentle_up);
+	dump_mask("large_turn_left_bank_to_orthogonal_gentle_up", track_list.large_turn_left_bank_to_orthogonal_gentle_up);
+	dump_mask("large_turn_right_bank_to_orthogonal_gentle_up", track_list.large_turn_right_bank_to_orthogonal_gentle_up);
+	dump_mask("flat_to_steep_up_diag", track_list.flat_to_steep_up_diag);
+	dump_mask("steep_to_flat_up_diag", track_list.steep_to_flat_up_diag);
+	dump_mask("steep_to_vertical_up_diag", track_list.steep_to_vertical_up_diag);
+	dump_mask("vertical_to_steep_up_diag", track_list.vertical_to_steep_up_diag);
+	dump_mask("vertical_diag", track_list.vertical_diag);
+	dump_mask("vertical_twist_left_to_diag_up", track_list.vertical_twist_left_to_diag_up);
+	dump_mask("vertical_twist_right_to_diag_up", track_list.vertical_twist_right_to_diag_up);
+	dump_mask("vertical_twist_left_to_orthogonal_up", track_list.vertical_twist_left_to_orthogonal_up);
+	dump_mask("vertical_twist_right_to_orthogonal_up", track_list.vertical_twist_right_to_orthogonal_up);
+	dump_mask("vertical_booster", track_list.vertical_booster);*/
+	dump_mask("flat_to_steep_up_diag", track_list.flat_to_steep_up_diag);
+	dump_mask("steep_to_flat_up_diag", track_list.steep_to_flat_up_diag);
+	dump_mask("dive_loop_45_left", track_list.dive_loop_45_left);
+	dump_mask("dive_loop_45_right", track_list.dive_loop_45_right);
+	dump_mask("dive_loop_90_left", track_list.dive_loop_90_left);
+	dump_mask("dive_loop_90_right", track_list.dive_loop_90_right);
+}
+
 int main(int argc,char** argv)
 {
-
-	if(argc !=2)
-	{
-		printf("Usage: TrackRender <file>\n");
-		return 1;
-	}
-
-	json_error_t error;
-	json_t* track=json_load_file(argv[1],0,&error);
-	if(track ==NULL)
-	{
-		printf("Error: %s at line %d column %d\n",error.text,error.line,error.column);
-		return 1;
-	}
-
-	const char* base_dir=NULL;
-	json_t* json_base_dir=json_object_get(track,"base_directory");
-	if(json_base_dir !=NULL&&json_is_string(json_base_dir))base_dir=json_string_value(json_base_dir);
-	else printf("Error: No property \"base_directory\" found\n");
-
-	const char* sprite_dir=NULL;
-	json_t* json_sprite_dir=json_object_get(track,"sprite_directory");
-	if(json_sprite_dir !=NULL&&json_is_string(json_sprite_dir))sprite_dir=json_string_value(json_sprite_dir);
-	else printf("Error: No property \"sprite_directory\" found\n");
-
-	const char* spritefile_in=NULL;
-	json_t* json_spritefile_in=json_object_get(track,"spritefile_in");
-	if(json_spritefile_in !=NULL&&json_is_string(json_spritefile_in))spritefile_in=json_string_value(json_spritefile_in);
-	else printf("Error: No property \"spritefile_in\" found\n");
-
-	const char* spritefile_out=NULL;
-	json_t* json_spritefile_out=json_object_get(track,"spritefile_out");
-	if(json_spritefile_out !=NULL&&json_is_string(json_spritefile_out))spritefile_out=json_string_value(json_spritefile_out);
-	else printf("Error: No property \"spritefile_out\" found\n");
-
-	int num_lights=9;
-	light_t lights[16]={
-	    {LIGHT_DIFFUSE,0,vector3_normalize(vector3(0.0,-1.0,0.0)),0.25},
-	    {LIGHT_DIFFUSE,0,vector3_normalize(vector3(1.0,0.3,0.0)),0.32},
-	    {LIGHT_SPECULAR,0,vector3_normalize(vector3(1,1,-1)),1.0},
-	    {LIGHT_DIFFUSE,0,vector3_normalize(vector3(1,0.65,-1)),0.8},
-	    {LIGHT_DIFFUSE,0,vector3(0.0,1.0,0.0),0.174},
-	    {LIGHT_DIFFUSE,0,vector3_normalize(vector3(-1.0,0.0,0.0)),0.15},
-	    {LIGHT_DIFFUSE,0,vector3_normalize(vector3(0.0,1.0,1.0)),0.2},
-	    {LIGHT_DIFFUSE,0,vector3_normalize(vector3(0.65,0.816,-0.65000000)),0.25},
-	    {LIGHT_DIFFUSE,0,vector3_normalize(vector3(-1.0,0.0,-1.0)),0.25},
-	    {0,0,{0,0,0},0},
-	    {0,0,{0,0,0},0},
-	    {0,0,{0,0,0},0},
-	    {0,0,{0,0,0},0},
-	    {0,0,{0,0,0},0},
-	    {0,0,{0,0,0},0},
-	    {0,0,{0,0,0},0}};
-
-	json_t* light_array=json_object_get(track,"lights");
-	if(light_array !=NULL)
-	{
-		if(!json_is_array(light_array))
-		{
-			printf("Error: Property \"lights\" is not an array\n");
-			return 1;
-		}
-		if(load_lights(lights,&num_lights,light_array))return 1;
-	}
-
-	int dither=1;
-	json_t* dither_json=json_object_get(track,"dither");
-	if(dither_json !=NULL)
-	{
-		if(!json_is_true(dither_json) && !json_is_false(dither_json))
-		{
-			printf("Error: Property \"dither\" is not a boolean\n");
-			return 1;
-		}
-	dither=json_is_true(dither_json);
-	}
-
-
-	track_type_t track_type;
-	if(load_track_type(&track_type,track))
-	{
-		printf("Error loading track\n");
-		return 1;
-	}
-
-	char full_path[256];
-	snprintf(full_path,256,"%s%s",base_dir,spritefile_in);
-	json_t* sprites=json_load_file(full_path,0,&error);
-	if(sprites ==NULL)
-	{
-		printf("Error: %s in file %s line %d column %d\n",error.text,error.source,error.line,error.column);
-		return 1;
-	}
-
-	context_t context=get_context(lights,num_lights,dither);
-
-	write_track_type(&context,&track_type,sprites,base_dir,sprite_dir);
-
-	snprintf(full_path,256,"%s%s",base_dir,spritefile_out);
-	json_dump_file(sprites,full_path,JSON_INDENT(4));
-	context_destroy(&context);
-
+	dump_masks();
 	return 0;
 }
