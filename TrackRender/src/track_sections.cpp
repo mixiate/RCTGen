@@ -1102,7 +1102,7 @@ const track_section_t steep_to_gentle_right_bank_diag={"steep_to_gentle_right_ba
 //Inversions
 
 #define BARREL_ROLL_LENGTH (3.091882*TILE_SIZE)
-#define INLINE_TWIST_LENGTH (3.001903*TILE_SIZE)
+#define INLINE_TWIST_LENGTH (3.0*TILE_SIZE)
 #define HALF_LOOP_SEGMENT1_LENGTH (0.540062*TILE_SIZE)
 #define HALF_LOOP_SEGMENT2_LENGTH (HALF_LOOP_SEGMENT1_LENGTH+2.685141*TILE_SIZE)
 #define HALF_LOOP_LENGTH (HALF_LOOP_SEGMENT2_LENGTH+1.956695*TILE_SIZE)
@@ -1140,7 +1140,7 @@ track_point_t barrel_roll_left_curve(float x)
 {
 	track_point_t point;
 	float u=x/BARREL_ROLL_LENGTH;
-	float radius=7*CLEARANCE_HEIGHT/6;
+	float radius=CLEARANCE_HEIGHT;
 
 	point.position=vector3(-radius*sin(PI*u),radius*(1-cos(PI*u)),3*TILE_SIZE*u);
 	point.tangent=vector3_normalize(vector3(-radius*PI*cos(PI*u)/BARREL_ROLL_LENGTH,radius*PI*sin(PI*u)/BARREL_ROLL_LENGTH,1.0));
@@ -1164,7 +1164,7 @@ track_point_t inline_twist_left_curve(float x)
 {
 	track_point_t point;
 	float u=x/INLINE_TWIST_LENGTH;
-	float radius=CLEARANCE_HEIGHT/6;
+	float radius=0.0;
 	point.position=vector3(-radius*sin(PI*u),radius*(1-cos(PI*u)),3*TILE_SIZE*u);
 	point.tangent=vector3_normalize(vector3(-radius*PI*cos(PI*u)/INLINE_TWIST_LENGTH,radius*PI*sin(PI*u)/INLINE_TWIST_LENGTH,1.0));
 	if(x<1e-4||x>INLINE_TWIST_LENGTH-1e-4)point.tangent=vector3(0,0,1);
